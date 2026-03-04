@@ -375,3 +375,121 @@ body { font-family: var(--serif); cursor: default; }
   75%  { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.02); }
 }
+
+/* ===== DARK MODE — Night Ink ===== */
+#book-scene.dark-mode {
+  background: radial-gradient(ellipse at center, #0d0702 0%, #050300 100%);
+}
+#book-scene.dark-mode #page-left {
+  background: linear-gradient(180deg, #1a1005 0%, #150d04 40%, #110a03 100%);
+  border-right-color: rgba(139,105,20,.15);
+}
+#book-scene.dark-mode #page-right {
+  background: linear-gradient(180deg, #1c1206 0%, #171005 60%, #120e04 100%);
+}
+#book-scene.dark-mode .flip-leaf {
+  background: linear-gradient(108deg, #1a1005 0%, #1c1207 38%, #161004 65%, #120d03 100%);
+}
+#book-scene.dark-mode .book-monogram,
+#book-scene.dark-mode .ornament { color: rgba(196,152,30,.8); }
+#book-scene.dark-mode .book-author-name,
+#book-scene.dark-mode .toc-label,
+#book-scene.dark-mode .ch-num,
+#book-scene.dark-mode .ch-page { color: rgba(139,105,20,.6); }
+#book-scene.dark-mode .ch-title { color: rgba(220,200,160,.7); }
+#book-scene.dark-mode .chapter-btn.active .ch-title,
+#book-scene.dark-mode .chapter-btn:hover .ch-title { color: rgba(244,234,213,.9); }
+#book-scene.dark-mode .chapter-btn:hover { background: rgba(139,105,20,.1); }
+#book-scene.dark-mode .chapter-btn.active { background: rgba(139,105,20,.15); }
+#book-scene.dark-mode .page-num-left,
+#book-scene.dark-mode .page-num-right { color: rgba(139,105,20,.45); }
+#book-scene.dark-mode .ch-heading { border-bottom-color: rgba(220,200,160,.35); }
+#book-scene.dark-mode .ch-heading-num { color: rgba(196,152,30,.7); }
+#book-scene.dark-mode .ch-heading-title { color: rgba(244,234,213,.92); }
+#book-scene.dark-mode .ch-heading-title em { color: rgba(180,155,100,.7); }
+#book-scene.dark-mode .book-p,
+#book-scene.dark-mode .porto-desc,
+#book-scene.dark-mode .social-desc { color: rgba(210,185,140,.75); }
+#book-scene.dark-mode .book-p strong { color: rgba(244,234,213,.95); }
+#book-scene.dark-mode .book-h3 { color: rgba(244,234,213,.85); }
+#book-scene.dark-mode .dropcap::first-letter { color: rgba(180,50,50,.9); }
+#book-scene.dark-mode .sec-break { color: rgba(139,105,20,.5); }
+#book-scene.dark-mode .porto-entry { border-left-color: rgba(139,105,20,.2); }
+#book-scene.dark-mode .porto-entry::before { background: rgba(139,105,20,.6); }
+#book-scene.dark-mode .porto-num { color: rgba(196,152,30,.7); }
+#book-scene.dark-mode .porto-tag { color: rgba(180,60,60,.85); background: rgba(139,26,26,.12); border-color: rgba(139,26,26,.2); }
+#book-scene.dark-mode .porto-title,
+#book-scene.dark-mode .social-title,
+#book-scene.dark-mode .skill-entry-title { color: rgba(244,234,213,.9); }
+#book-scene.dark-mode .porto-pill { color: rgba(139,105,20,.65); border-color: rgba(139,105,20,.18); }
+#book-scene.dark-mode .porto-link { color: rgba(180,70,70,.85); }
+#book-scene.dark-mode .skill-chip { color: rgba(139,105,20,.6); background: rgba(139,105,20,.06); border-color: rgba(139,105,20,.15); }
+#book-scene.dark-mode .skill-ink-bar { background: linear-gradient(90deg, #6b1a1a 0%, #8b6914 60%, rgba(139,105,20,.4) 100%); }
+#book-scene.dark-mode .skill-ink-bar::after { background: #6b1a1a; }
+#book-scene.dark-mode .skill-ink-pct,
+#book-scene.dark-mode .social-cat { color: rgba(139,105,20,.55); }
+#book-scene.dark-mode .social-date { color: rgba(139,105,20,.4); }
+#book-scene.dark-mode .social-num { color: rgba(139,105,20,.5); }
+#book-scene.dark-mode .social-photo-frame { border-color: rgba(139,105,20,.2); }
+#book-scene.dark-mode .contact-box { background: rgba(139,105,20,.04); border-color: rgba(139,105,20,.18); }
+#book-scene.dark-mode .contact-label { color: rgba(139,105,20,.55); }
+#book-scene.dark-mode .contact-val { color: rgba(210,185,140,.75); }
+#book-scene.dark-mode .contact-val a { color: rgba(180,70,70,.85); }
+#book-scene.dark-mode .qinput,
+#book-scene.dark-mode .qtextarea { background: rgba(20,12,4,.6); border-color: rgba(139,105,20,.2); color: rgba(220,195,150,.88); }
+#book-scene.dark-mode .qinput:focus,
+#book-scene.dark-mode .qtextarea:focus { border-color: rgba(139,105,20,.5); }
+#book-scene.dark-mode .qlabel { color: rgba(139,105,20,.55); }
+#book-scene.dark-mode .form-note { color: rgba(139,105,20,.45); }
+#book-scene.dark-mode .qsubmit { background: rgba(60,35,10,.9); color: rgba(220,195,150,.85); }
+#book-scene.dark-mode .qsubmit:hover { background: rgba(100,20,20,.9); }
+#book-scene.dark-mode .lang-pill { background: rgba(139,105,20,.06); border-color: rgba(139,105,20,.15); color: rgba(210,185,140,.75); }
+#book-scene.dark-mode .stat-box { background: rgba(139,105,20,.06); border-color: rgba(139,105,20,.15); }
+#book-scene.dark-mode .sn { color: rgba(180,60,60,.9); }
+#book-scene.dark-mode .sl { color: rgba(139,105,20,.5); }
+#book-scene.dark-mode .portrait-caption { color: rgba(139,105,20,.5); }
+#book-scene.dark-mode #spine {
+  background: linear-gradient(90deg, #030201, #0d0702 30%, #150d04 50%, #0d0702 70%, #030201);
+}
+#book-scene.dark-mode #page-right::after {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.15));
+}
+
+/* ===== PRINT / PDF ===== */
+@media print {
+  body { background: #fff !important; }
+  #book-scene {
+    background: #fff !important;
+    perspective: none !important;
+    width: 100% !important; height: auto !important;
+    display: block !important;
+  }
+  #book {
+    width: 100% !important; height: auto !important;
+    display: block !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  #spine { display: none !important; }
+  #page-left {
+    width: 100% !important; height: auto !important;
+    border: none !important; border-bottom: 2px solid #8b6914 !important;
+    padding-bottom: 1rem !important;
+    background: #fff !important;
+  }
+  #page-right {
+    width: 100% !important; height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .right-inner {
+    height: auto !important; overflow: visible !important;
+    padding: 1.5rem 2rem !important;
+    opacity: 1 !important;
+  }
+  .content-section { display: block !important; margin-bottom: 2.5rem; page-break-inside: avoid; }
+  .flip-leaf, #lb, button[title], .social-photo-overlay { display: none !important; }
+  .social-photo-frame { break-inside: avoid; }
+  .porto-entry, .skill-entry, .social-entry { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
