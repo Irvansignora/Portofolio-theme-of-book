@@ -408,10 +408,10 @@ export default function BookPortfolio() {
                 {[
                   { icon: '💼', title: 'Sales & Business',    pct: 82, chips: ['Team Leadership','Sales Strategy','Business Development','Client Relations','Negotiation'] },
                   { icon: '🗂️', title: 'Administration & Tax', pct: 80, chips: ['Tax Management','Administrative Reports','Receivables','Bookkeeping','Budget Planning'] },
-                  { icon: '📊', title: 'Data & Analytics',    pct: 72, chips: ['Data Analysis','Sales Analytics','Reporting','WordPress','Optimisation'] },
-                  { icon: '💻', title: 'Technical Tools',     pct: 75, chips: ['MS Excel','MS Word','PowerPoint','Outlook','MS Office Suite'] },
+                  { icon: '📊', title: 'Data & Analytics',    pct: 82, chips: ['Data Analysis','Sales Analytics','Reporting','WordPress','Optimisation'] },
+                  { icon: '💻', title: 'Technical Tools',     pct: 70, chips: ['MS Excel','MS Word','PowerPoint','Outlook','MS Office Suite'] },
                   { icon: '🎯', title: 'Management',          pct: 80, chips: ['Team Management','Strategic Planning','Time Management','Problem Solving','Decision Making'] },
-                  { icon: '🤝', title: 'Soft Skills',         pct: 85, chips: ['Communication','Teamwork','Fast Learner','Adaptable','Resilient'] },
+                  { icon: '🤝', title: 'Soft Skills',         pct: 81, chips: ['Communication','Teamwork','Fast Learner','Adaptable','Resilient'] },
                 ].map(s => (
                   <div key={s.title} className="skill-entry">
                     <div className="skill-entry-title"><span>{s.icon}</span> {s.title}</div>
