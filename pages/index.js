@@ -366,20 +366,37 @@ export default function BookPortfolio() {
                 <div className="sec-break">✦ · · · ✦</div>
 
                 {[
-                  { num: 'I',   cat: 'Community Service', date: 'November 2018', title: 'Cleaning Places of Worship',    desc: 'Participated in regular cleaning and maintenance activities at local places of worship, ensuring clean and welcoming spaces for the community.' },
-                  { num: 'II',  cat: 'Disaster Relief',   date: '2019',          title: 'Disaster Relief Assistance',    desc: 'Supported disaster relief efforts by providing aid to communities affected by natural disasters, assisting with distribution and support coordination.' },
-                  { num: 'III', cat: 'Child Welfare',     date: '2019 – 2020',   title: 'Supporting Orphanages',         desc: 'Regular visits and support to orphanages, providing assistance and spending time with underprivileged children to brighten their days.' },
-                  { num: 'IV',  cat: 'Social Welfare',    date: '2018 – 2020',   title: 'Community Welfare Programs',    desc: 'Active participation in various social welfare activities including food drives, educational programmes, and community development initiatives.' },
-                  { num: 'V',   cat: 'Education Support', date: '2019',          title: 'Educational Programmes',        desc: 'Contributed to educational initiatives by tutoring underprivileged students and organising learning activities to promote literacy and skill development.' },
-                  { num: 'VI',  cat: 'Environmental Care',date: '2018 – 2019',   title: 'Environmental Clean-Up',        desc: 'Participated in environmental conservation activities including beach clean-ups, tree planting, and awareness campaigns for sustainable living practices.' },
+                  { num: 'I',   cat: 'Community Service', date: 'November 2018', title: 'Cleaning Places of Worship',    desc: 'Participated in regular cleaning and maintenance activities at local places of worship, ensuring clean and welcoming spaces for the community.',        imgs: ['social-1-img1.jpg','social-1-img2.jpg','social-1-img3.jpg'] },
+                  { num: 'II',  cat: 'Disaster Relief',   date: '2019',          title: 'Disaster Relief Assistance',    desc: 'Supported disaster relief efforts by providing aid to communities affected by natural disasters, assisting with distribution and support coordination.', imgs: ['social-2-img1.jpg','social-2-img2.jpg','social-2-img3.jpg'] },
+                  { num: 'III', cat: 'Child Welfare',     date: '2019 – 2020',   title: 'Supporting Orphanages',         desc: 'Regular visits and support to orphanages, providing assistance and spending time with underprivileged children to brighten their days.',                imgs: ['social-3-img1.jpg','social-3-img2.jpg','social-3-img3.jpg'] },
+                  { num: 'IV',  cat: 'Social Welfare',    date: '2018 – 2020',   title: 'Community Welfare Programs',    desc: 'Active participation in various social welfare activities including food drives, educational programmes, and community development initiatives.',          imgs: ['social-4-img1.jpg','social-4-img2.jpg','social-4-img3.jpg'] },
+                  { num: 'V',   cat: 'Education Support', date: '2019',          title: 'Educational Programmes',        desc: 'Contributed to educational initiatives by tutoring underprivileged students and organising learning activities to promote literacy and skill development.',  imgs: ['social-5-img1.jpg','social-5-img2.jpg','social-5-img3.jpg'] },
+                  { num: 'VI',  cat: 'Environmental Care',date: '2018 – 2019',   title: 'Environmental Clean-Up',        desc: 'Participated in environmental conservation activities including beach clean-ups, tree planting, and awareness campaigns for sustainable living practices.',    imgs: ['social-6-img1.jpg','social-6-img2.jpg','social-6-img3.jpg'] },
                 ].map(s => (
                   <div key={s.title} className="social-entry">
                     <div className="social-num">{s.num}</div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div className="social-cat">{s.cat}</div>
                       <div className="social-date">{s.date}</div>
                       <div className="social-title">{s.title}</div>
                       <p className="social-desc">{s.desc}</p>
+                      <div className="social-photo-strip">
+                        {s.imgs.map((img, i) => (
+                          <div
+                            key={i}
+                            className="social-photo-frame"
+                            onClick={() => openLB(s.imgs, s.title)}
+                            style={{ animationDelay: `${i * 0.08}s` }}
+                          >
+                            <img
+                              src={`/${img}`}
+                              alt={`${s.title} ${i + 1}`}
+                              onError={e => { e.target.closest('.social-photo-frame').style.display = 'none' }}
+                            />
+                            <div className="social-photo-overlay"><span>✦</span></div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
