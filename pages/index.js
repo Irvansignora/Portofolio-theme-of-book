@@ -21,10 +21,15 @@ export default function BookPortfolio() {
   const [lbImgs, setLbImgs] = useState([])
   const [lbIdx, setLbIdx] = useState(0)
   const [formSent, setFormSent] = useState(false)
+  const [formError, setFormError] = useState(false)
+  const [formSending, setFormSending] = useState(false)
   const [scrollPct, setScrollPct] = useState(0)
   const [soundOn, setSoundOn] = useState(false)
   const [flipQuote, setFlipQuote] = useState('')
   const [showQuote, setShowQuote] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [visitCount, setVisitCount] = useState(null)
+  const [sectionVisible, setSectionVisible] = useState(false)
 
   const rightScrollRef = useRef(null)
   const leafRef = useRef(null)
@@ -48,6 +53,23 @@ export default function BookPortfolio() {
       })
     }, 600)
   }, [])
+
+  // Visitor counter (localStorage)
+  useEffect(() => {
+    try {
+      const key = 'miy_visits'
+      const v = parseInt(localStorage.getItem(key) || '0') + 1
+      localStorage.setItem(key, v)
+      setVisitCount(v)
+    } catch(e) {}
+  }, [])
+
+  // Section fade-in on chapter change
+  useEffect(() => {
+    setSectionVisible(false)
+    const t = setTimeout(() => setSectionVisible(true), 80)
+    return () => clearTimeout(t)
+  }, [current])
 
   // Scroll progress tracker
   useEffect(() => {
@@ -159,10 +181,30 @@ export default function BookPortfolio() {
     setLbOpen(true)
   }
 
-  const doSubmit = (e) => {
+  const doSubmit = async (e) => {
     e.preventDefault()
-    setFormSent(true)
-    setTimeout(() => { setFormSent(false); e.target.reset() }, 3000)
+    setFormSending(true)
+    setFormError(false)
+    const data = new FormData(e.target)
+    try {
+      const res = await fetch('https://formspree.io/f/xpwzgknd', {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' }
+      })
+      if (res.ok) {
+        setFormSent(true)
+        e.target.reset()
+        setTimeout(() => setFormSent(false), 5000)
+      } else {
+        setFormError(true)
+        setTimeout(() => setFormError(false), 4000)
+      }
+    } catch {
+      setFormError(true)
+      setTimeout(() => setFormError(false), 4000)
+    }
+    setFormSending(false)
   }
 
   const flipStyle = isFlipping ? {
@@ -224,7 +266,7 @@ export default function BookPortfolio() {
         `}</style>
       </Head>
 
-      <div id="book-scene">
+      <div id="book-scene" className={darkMode ? 'dark-mode' : ''}>
         <div id="book">
 
           {/* Spine */}
@@ -275,7 +317,7 @@ export default function BookPortfolio() {
               <div className="flip-leaf" ref={leafRef} style={flipStyle} />
             )}
 
-            <div className="right-inner" id="right-scroll" ref={rightScrollRef}>
+            <div className="right-inner" id="right-scroll" ref={rightScrollRef} style={{ opacity: sectionVisible ? 1 : 0, transition: 'opacity .35s ease' }}>
 
               {/* ===== CHAPTER I: HOME ===== */}
               <div className={`content-section${current === 'home' ? ' active' : ''}`} id="sec-home">
@@ -487,12 +529,13 @@ export default function BookPortfolio() {
                 <p className="form-note">— Address your missive below and it shall be received with gratitude —</p>
 
                 <form onSubmit={doSubmit}>
-                  <div className="qfield"><label className="qlabel">Your Name</label><input className="qinput" type="text" placeholder="Enter your full name..." required /></div>
-                  <div className="qfield"><label className="qlabel">Your Email</label><input className="qinput" type="email" placeholder="your@email.com" required /></div>
-                  <div className="qfield"><label className="qlabel">Subject</label><input className="qinput" type="text" placeholder="The nature of your enquiry..." required /></div>
-                  <div className="qfield"><label className="qlabel">Your Message</label><textarea className="qtextarea" placeholder="Compose your letter here..." required /></div>
-                  <button className="qsubmit" type="submit" style={formSent ? { background: '#4a7a3a' } : {}}>
-                    {formSent ? '✓ Letter Dispatched' : 'Dispatch Letter →'}
+                  <div className="qfield"><label className="qlabel">Your Name</label><input className="qinput" type="text" name="name" placeholder="Enter your full name..." required /></div>
+                  <div className="qfield"><label className="qlabel">Your Email</label><input className="qinput" type="email" name="email" placeholder="your@email.com" required /></div>
+                  <div className="qfield"><label className="qlabel">Subject</label><input className="qinput" type="text" name="subject" placeholder="The nature of your enquiry..." required /></div>
+                  <div className="qfield"><label className="qlabel">Your Message</label><textarea className="qtextarea" name="message" placeholder="Compose your letter here..." required /></div>
+                  <button className="qsubmit" type="submit" disabled={formSending}
+                    style={formSent ? { background:'#4a7a3a' } : formError ? { background:'#7a2a2a' } : formSending ? { opacity:.6, cursor:'wait' } : {}}>
+                    {formSending ? '⟳ Dispatching…' : formSent ? '✓ Letter Dispatched!' : formError ? '✕ Failed — Try Again' : 'Dispatch Letter →'}
                   </button>
                 </form>
 
@@ -500,6 +543,11 @@ export default function BookPortfolio() {
                 <p className="book-p" style={{ fontFamily: 'var(--fell)', fontStyle: 'italic', textAlign: 'center', fontSize: '.85rem', color: 'var(--ink3)' }}>
                   © MMXXV Muhamad Irpan Yasin — All Rights Reserved
                 </p>
+                {visitCount && (
+                  <p style={{ fontFamily: 'var(--display)', fontSize: '.42rem', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--ink3)', textAlign: 'center', marginTop: '.6rem', opacity: .6 }}>
+                    This tome has been opened {visitCount.toLocaleString()} {visitCount === 1 ? 'time' : 'times'}
+                  </p>
+                )}
                 <div className="page-num-right">{pageNums.r}</div>
               </div>
 
@@ -543,26 +591,27 @@ export default function BookPortfolio() {
         }}>✦</div>
       </div>
 
-      {/* Sound toggle button */}
-      <button
-        onClick={() => setSoundOn(s => !s)}
-        title={soundOn ? 'Mute page-turn sound' : 'Enable page-turn sound'}
-        style={{
-          position: 'fixed', bottom: '1.8rem', left: '1.8rem',
-          zIndex: 50, background: 'rgba(26,18,9,.75)',
-          border: '1px solid rgba(139,105,20,.4)',
-          color: soundOn ? 'var(--gold)' : 'rgba(139,105,20,.4)',
-          fontFamily: 'var(--display)', fontSize: '.42rem',
-          letterSpacing: '.12em', textTransform: 'uppercase',
-          padding: '.45rem .75rem', cursor: 'pointer',
-          backdropFilter: 'blur(6px)',
-          transition: 'color .3s, border-color .3s',
-          display: 'flex', alignItems: 'center', gap: '.4rem',
-        }}
-      >
-        <span style={{ fontSize: '.85rem' }}>{soundOn ? '🔔' : '🔕'}</span>
-        {soundOn ? 'Sound On' : 'Sound Off'}
-      </button>
+      {/* Corner toolbar — sound + dark mode + print */}
+      <div style={{
+        position: 'fixed', bottom: '1.8rem', left: '1.8rem',
+        zIndex: 50, display: 'flex', gap: '.4rem', flexDirection: 'column', alignItems: 'flex-start',
+      }}>
+        {/* Sound */}
+        <button onClick={() => setSoundOn(s => !s)} title={soundOn ? 'Mute' : 'Enable sound'}
+          style={{ background:'rgba(26,18,9,.82)', border:'1px solid rgba(139,105,20,.4)', color: soundOn ? 'var(--gold)':'rgba(139,105,20,.4)', fontFamily:'var(--display)', fontSize:'.4rem', letterSpacing:'.1em', textTransform:'uppercase', padding:'.38rem .65rem', cursor:'pointer', backdropFilter:'blur(8px)', transition:'all .25s', display:'flex', alignItems:'center', gap:'.35rem' }}>
+          <span style={{ fontSize:'.8rem' }}>{soundOn ? '🔔' : '🔕'}</span>{soundOn ? 'Sound On' : 'Sound Off'}
+        </button>
+        {/* Dark mode */}
+        <button onClick={() => setDarkMode(d => !d)} title={darkMode ? 'Light mode' : 'Dark mode'}
+          style={{ background:'rgba(26,18,9,.82)', border:'1px solid rgba(139,105,20,.4)', color: darkMode ? 'var(--gold)':'rgba(139,105,20,.4)', fontFamily:'var(--display)', fontSize:'.4rem', letterSpacing:'.1em', textTransform:'uppercase', padding:'.38rem .65rem', cursor:'pointer', backdropFilter:'blur(8px)', transition:'all .25s', display:'flex', alignItems:'center', gap:'.35rem' }}>
+          <span style={{ fontSize:'.8rem' }}>{darkMode ? '🌙' : '☀️'}</span>{darkMode ? 'Night Ink' : 'Day Parchment'}
+        </button>
+        {/* Print CV */}
+        <button onClick={() => window.print()} title="Print / Save as PDF"
+          style={{ background:'rgba(26,18,9,.82)', border:'1px solid rgba(139,105,20,.4)', color:'rgba(139,105,20,.4)', fontFamily:'var(--display)', fontSize:'.4rem', letterSpacing:'.1em', textTransform:'uppercase', padding:'.38rem .65rem', cursor:'pointer', backdropFilter:'blur(8px)', transition:'all .25s', display:'flex', alignItems:'center', gap:'.35rem' }}>
+          <span style={{ fontSize:'.8rem' }}>🖨</span>Print / Save CV
+        </button>
+      </div>
 
       {/* Flip quote overlay */}
       {showQuote && (
