@@ -21,11 +21,16 @@ export default function BookPortfolio() {
   const [lbImgs, setLbImgs] = useState([])
   const [lbIdx, setLbIdx] = useState(0)
   const [formSent, setFormSent] = useState(false)
+  const [scrollPct, setScrollPct] = useState(0)
+  const [soundOn, setSoundOn] = useState(false)
+  const [flipQuote, setFlipQuote] = useState('')
+  const [showQuote, setShowQuote] = useState(false)
 
   const rightScrollRef = useRef(null)
   const leafRef = useRef(null)
   const flipping = useRef(false)
   const pendingChapter = useRef(null)
+  const audioCtx = useRef(null)
 
   // Counter animation
   const trigCounters = useCallback(() => {
@@ -44,11 +49,66 @@ export default function BookPortfolio() {
     }, 600)
   }, [])
 
+  // Scroll progress tracker
+  useEffect(() => {
+    const el = rightScrollRef.current
+    if (!el) return
+    const onScroll = () => {
+      const pct = el.scrollHeight <= el.clientHeight ? 0
+        : Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100)
+      setScrollPct(pct)
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [current])
+
+  // Synthesize page-flip whoosh sound
+  const playFlipSound = useCallback(() => {
+    if (!soundOn) return
+    try {
+      if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)()
+      const ctx = audioCtx.current
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.45, ctx.sampleRate)
+      const data = buf.getChannelData(0)
+      for (let i = 0; i < data.length; i++) {
+        const t = i / ctx.sampleRate
+        const env = Math.sin(Math.PI * t / 0.45) * Math.pow(1 - t / 0.45, 1.5)
+        data[i] = (Math.random() * 2 - 1) * env * 0.18
+      }
+      const src = ctx.createBufferSource()
+      const filt = ctx.createBiquadFilter()
+      filt.type = 'bandpass'
+      filt.frequency.setValueAtTime(2200, ctx.currentTime)
+      filt.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.45)
+      filt.Q.value = 0.8
+      src.buffer = buf
+      src.connect(filt)
+      filt.connect(ctx.destination)
+      src.start()
+    } catch(e) {}
+  }, [soundOn])
+
+  const FLIP_QUOTES = [
+    '"A page turned is a life changed."',
+    '"Every chapter holds a new beginning."',
+    '"In the turning of pages, wisdom grows."',
+    '"The next page awaits — turn with purpose."',
+    '"Each leaf of parchment tells a story."',
+    '"Forward ever, backward never."',
+  ]
+
   // Page flip logic
   const gotoChapter = useCallback((id) => {
     if (id === current || flipping.current) return
     flipping.current = true
     setIsFlipping(true)
+    playFlipSound()
+
+    // Show flip quote briefly
+    const q = FLIP_QUOTES[Math.floor(Math.random() * FLIP_QUOTES.length)]
+    setFlipQuote(q)
+    setShowQuote(true)
+    setTimeout(() => setShowQuote(false), 900)
 
     const curIdx = CHAPTER_ORDER.indexOf(current)
     const newIdx = CHAPTER_ORDER.indexOf(id)
@@ -68,7 +128,7 @@ export default function BookPortfolio() {
       setIsFlipping(false)
       flipping.current = false
     }, 1150)
-  }, [current, trigCounters])
+  }, [current, trigCounters, playFlipSound])
 
   // Keyboard lightbox
   useEffect(() => {
@@ -341,15 +401,19 @@ export default function BookPortfolio() {
                 <div className="sec-break">✦ · · · ✦</div>
 
                 {[
-                  { icon: '💼', title: 'Sales & Business',    chips: ['Team Leadership','Sales Strategy','Business Development','Client Relations','Negotiation'] },
-                  { icon: '💰', title: 'Finance & Tax',       chips: ['Tax Management','Financial Reports','Receivables','Bookkeeping','Budget Planning'] },
-                  { icon: '📊', title: 'Data & Analytics',    chips: ['Data Analysis','Sales Analytics','Reporting','WordPress','Optimisation'] },
-                  { icon: '💻', title: 'Technical Tools',     chips: ['MS Office Suite','Microsoft Excel','Microsoft Word','PowerPoint','Outlook'] },
-                  { icon: '🎯', title: 'Management',          chips: ['Team Management','Planning','Time Management','Problem Solving','Decision Making'] },
-                  { icon: '🤝', title: 'Soft Skills',         chips: ['Communication','Teamwork','Fast Learner','Motivated','Adaptable','Resilient'] },
+                  { icon: '💼', title: 'Sales & Business',    pct: 92, chips: ['Team Leadership','Sales Strategy','Business Development','Client Relations','Negotiation'] },
+                  { icon: '💰', title: 'Finance & Tax',       pct: 88, chips: ['Tax Management','Financial Reports','Receivables','Bookkeeping','Budget Planning'] },
+                  { icon: '📊', title: 'Data & Analytics',    pct: 82, chips: ['Data Analysis','Sales Analytics','Reporting','WordPress','Optimisation'] },
+                  { icon: '💻', title: 'Technical Tools',     pct: 85, chips: ['MS Office Suite','Microsoft Excel','Microsoft Word','PowerPoint','Outlook'] },
+                  { icon: '🎯', title: 'Management',          pct: 90, chips: ['Team Management','Planning','Time Management','Problem Solving','Decision Making'] },
+                  { icon: '🤝', title: 'Soft Skills',         pct: 95, chips: ['Communication','Teamwork','Fast Learner','Motivated','Adaptable','Resilient'] },
                 ].map(s => (
                   <div key={s.title} className="skill-entry">
                     <div className="skill-entry-title"><span>{s.icon}</span> {s.title}</div>
+                    <div className="skill-ink-bar-wrap">
+                      <div className="skill-ink-bar" style={{ width: `${s.pct}%` }} />
+                      <span className="skill-ink-pct">{s.pct}%</span>
+                    </div>
                     <div className="skill-chips">{s.chips.map(c => <span key={c} className="skill-chip">{c}</span>)}</div>
                   </div>
                 ))}
@@ -443,6 +507,83 @@ export default function BookPortfolio() {
           </div>
         </div>
       </div>
+
+      {/* Scroll indicator — subtle quill at bottom of right page */}
+      {current !== 'home' && scrollPct < 95 && (
+        <div style={{
+          position: 'fixed', bottom: '2.2rem', right: '2.5rem',
+          zIndex: 50, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.2rem',
+          opacity: scrollPct > 80 ? 0 : 0.55,
+          transition: 'opacity .6s',
+          animation: 'quillBob 2.2s ease-in-out infinite',
+        }}>
+          <span style={{ fontFamily: 'var(--fell)', fontSize: '.62rem', color: 'var(--gold)', fontStyle: 'italic', letterSpacing: '.06em' }}>scroll</span>
+          <span style={{ color: 'var(--gold)', fontSize: '.9rem', lineHeight: 1 }}>↓</span>
+        </div>
+      )}
+
+      {/* Reading bookmark — thin ribbon at top-right of book */}
+      <div style={{
+        position: 'fixed', top: 0,
+        right: 'calc(50% - min(550px,48vw) + 10px)',
+        width: '18px',
+        height: `${28 + scrollPct * 0.55}px`,
+        background: 'linear-gradient(180deg, var(--red) 0%, #5a0f0f 100%)',
+        zIndex: 30, pointerEvents: 'none',
+        boxShadow: '1px 0 6px rgba(0,0,0,.3)',
+        transition: 'height .3s cubic-bezier(.16,1,.3,1)',
+        clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 7px), 50% 100%, 0 calc(100% - 7px))',
+      }}>
+        <div style={{
+          position: 'absolute', top: '6px', left: '50%', transform: 'translateX(-50%)',
+          color: 'rgba(244,234,213,.55)', fontSize: '.55rem', writingMode: 'vertical-rl',
+          fontFamily: 'var(--display)', letterSpacing: '.15em',
+          userSelect: 'none',
+        }}>✦</div>
+      </div>
+
+      {/* Sound toggle button */}
+      <button
+        onClick={() => setSoundOn(s => !s)}
+        title={soundOn ? 'Mute page-turn sound' : 'Enable page-turn sound'}
+        style={{
+          position: 'fixed', bottom: '1.8rem', left: '1.8rem',
+          zIndex: 50, background: 'rgba(26,18,9,.75)',
+          border: '1px solid rgba(139,105,20,.4)',
+          color: soundOn ? 'var(--gold)' : 'rgba(139,105,20,.4)',
+          fontFamily: 'var(--display)', fontSize: '.42rem',
+          letterSpacing: '.12em', textTransform: 'uppercase',
+          padding: '.45rem .75rem', cursor: 'pointer',
+          backdropFilter: 'blur(6px)',
+          transition: 'color .3s, border-color .3s',
+          display: 'flex', alignItems: 'center', gap: '.4rem',
+        }}
+      >
+        <span style={{ fontSize: '.85rem' }}>{soundOn ? '🔔' : '🔕'}</span>
+        {soundOn ? 'Sound On' : 'Sound Off'}
+      </button>
+
+      {/* Flip quote overlay */}
+      {showQuote && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 45,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <p style={{
+            fontFamily: 'var(--fell)', fontStyle: 'italic',
+            fontSize: 'clamp(.9rem,2vw,1.1rem)',
+            color: 'rgba(244,234,213,.82)',
+            textAlign: 'center',
+            maxWidth: '340px',
+            letterSpacing: '.02em',
+            lineHeight: 1.6,
+            textShadow: '0 2px 16px rgba(0,0,0,.8)',
+            animation: 'quoteFlash .9s ease forwards',
+          }}>{flipQuote}</p>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lbOpen && (
