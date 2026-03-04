@@ -1,428 +1,368 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sales Analytics Dashboard — Muhamad Irpan Yasin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sales Analytics — Ledger of Commerce · Muhamad Irpan Yasin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=UnifrakturMaguntia&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --cyan: #00f0ff;
-    --magenta: #ff00ea;
-    --yellow: #ffed4e;
-    --blue: #0066ff;
-    --dark: #050508;
-    --card: #0d0d14;
-    --card2: #111118;
-    --border: rgba(0,240,255,0.15);
-    --text: #ffffff;
-    --muted: #7a7a9a;
-  }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --paper:#f4ead5;
+  --paper2:#ede0c4;
+  --paper3:#e8d5b0;
+  --paper4:#e2cfa0;
+  --ink:#1a1209;
+  --ink2:#3d2e1a;
+  --ink3:#6b5035;
+  --red:#8b1a1a;
+  --gold:#8b6914;
+  --gold2:#c4981e;
+  --spine:#2a1a08;
+  --serif:'Crimson Text',serif;
+  --display:'Cinzel',serif;
+  --fell:'IM Fell English',serif;
+  --fraktur:'UnifrakturMaguntia',cursive;
+}
 
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html,body{min-height:100%;background:#1a0f05;}
+body{
+  font-family:var(--serif);
+  color:var(--ink);
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(139,105,20,.06), transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,26,26,.04), transparent 50%),
+    #f4ead5;
+  background-attachment:fixed;
+  cursor:default;
+}
 
-  html { scroll-behavior: smooth; }
+/* Paper texture overlay */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.6;
+}
 
-  body {
-    font-family: 'Rajdhani', sans-serif;
-    background: var(--dark);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* Horizontal ruled lines like old ledger paper */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:repeating-linear-gradient(
+    180deg,
+    transparent,transparent 32px,
+    rgba(139,105,20,.07) 32px,rgba(139,105,20,.07) 33px
+  );
+  pointer-events:none;z-index:0;
+}
 
-  /* ── GRID BG ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0;
-    background-image:
-      linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-  }
+/* ===== HEADER — Book Cover Style ===== */
+.book-header{
+  position:sticky;top:0;z-index:100;
+  background:linear-gradient(180deg,var(--paper3),var(--paper2));
+  border-bottom:3px double rgba(139,105,20,.5);
+  box-shadow:0 2px 20px rgba(0,0,0,.15), 0 1px 0 rgba(255,255,255,.3);
+  padding:1rem 2rem .8rem;
+}
+.book-header::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--red),var(--gold),var(--red));
+  opacity:.6;
+}
+.book-header-inner{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  flex-wrap:wrap;
+}
+.book-title-group{}
+.book-header-pretitle{
+  font-family:var(--display);font-size:.48rem;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:.2rem;
+}
+.book-header-title{
+  font-family:var(--fraktur);font-size:1.9rem;
+  color:var(--ink);line-height:1;
+  text-shadow:1px 1px 0 rgba(139,105,20,.2);
+}
+.book-header-subtitle{
+  font-family:var(--fell);font-size:.82rem;
+  color:var(--ink3);font-style:italic;margin-top:.1rem;
+}
+.book-header-right{
+  text-align:right;
+}
+.book-header-author{
+  font-family:var(--display);font-size:.6rem;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink2);
+}
+.book-header-period{
+  font-family:var(--fell);font-size:.78rem;
+  color:var(--ink3);font-style:italic;margin-top:.2rem;
+}
+.live-candle{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-family:var(--display);font-size:.42rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
+  margin-top:.3rem;
+}
+.candle-flame{
+  display:inline-block;animation:flicker 2.5s ease-in-out infinite;
+}
+@keyframes flicker{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.7;transform:scale(1.15) rotate(2deg);}}
 
-  /* ── SCAN LINE ── */
-  body::after {
-    content: '';
-    position: fixed; left: 0; width: 100%; height: 2px; z-index: 0;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    opacity: 0.3;
-    animation: scan 8s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+/* ===== MAIN CONTENT ===== */
+main{
+  position:relative;z-index:1;
+  max-width:1400px;margin:0 auto;
+  padding:2rem 2rem 4rem;
+}
 
-  /* ── HEADER ── */
-  header {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(5,5,8,0.92);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-  }
+/* ===== SECTION LABELS ===== */
+.ledger-section-label{
+  font-family:var(--display);font-size:.5rem;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold);
+  display:flex;align-items:center;gap:1rem;
+  margin:2rem 0 1rem;
+}
+.ledger-section-label::before,.ledger-section-label::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,105,20,.4),transparent);
+}
 
-  .header-left { display: flex; align-items: center; gap: 1rem; }
+/* ===== KPI CARDS ===== */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1rem;
+  margin-bottom:2rem;
+}
+.kpi-card{
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper2) 100%);
+  border:1px solid rgba(139,105,20,.35);
+  border-top:3px solid var(--gold);
+  padding:1.2rem;
+  position:relative;
+  box-shadow:2px 3px 12px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.4);
+}
+.kpi-card::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.5;pointer-events:none;
+}
+.kpi-icon-label{
+  font-family:var(--display);font-size:.44rem;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);
+  margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem;
+}
+.kpi-value{
+  font-family:var(--display);font-size:1.6rem;
+  color:var(--red);font-weight:700;
+  line-height:1;margin-bottom:.4rem;
+  text-shadow:1px 1px 0 rgba(139,26,26,.1);
+}
+.kpi-sub{
+  font-family:var(--fell);font-size:.78rem;
+  color:var(--ink3);font-style:italic;
+}
 
-  .logo-text {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--cyan), var(--magenta));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* ===== CHART CARDS ===== */
+.charts-row{display:grid;gap:1.2rem;margin-bottom:1.2rem;}
+.row-1{grid-template-columns:1fr;}
+.row-2{grid-template-columns:1fr 1fr;}
+.row-3{grid-template-columns:2fr 1fr 1fr;}
+.row-2-1{grid-template-columns:2fr 1fr;}
 
-  .header-badge {
-    background: rgba(0,240,255,0.08);
-    border: 1px solid rgba(0,240,255,0.3);
-    color: var(--cyan);
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+.chart-card{
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper2) 100%);
+  border:1px solid rgba(139,105,20,.3);
+  padding:1.4rem;
+  position:relative;
+  box-shadow:2px 3px 12px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.chart-card::before{
+  content:'';
+  position:absolute;top:0;left:1.4rem;right:1.4rem;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,105,20,.3),transparent);
+}
+.chart-card::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.5;pointer-events:none;z-index:0;
+}
+.chart-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:1rem;position:relative;z-index:1;
+}
+.chart-title{
+  font-family:var(--display);font-size:.7rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
+  font-weight:700;
+}
+.chart-subtitle{
+  font-family:var(--fell);font-size:.78rem;
+  color:var(--ink3);font-style:italic;margin-top:.15rem;
+}
+.chart-tag{
+  font-family:var(--display);font-size:.4rem;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--gold);
+  border:1px solid rgba(139,105,20,.3);
+  padding:.2rem .6rem;white-space:nowrap;
+  background:rgba(139,105,20,.05);
+}
+.chart-wrap{position:relative;z-index:1;}
 
-  .header-right {
-    font-size: 0.82rem;
-    color: var(--muted);
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 0.05em;
-  }
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto;position:relative;z-index:1;}
+table{width:100%;border-collapse:collapse;font-size:.88rem;}
+thead tr{border-bottom:2px solid rgba(139,105,20,.3);}
+th{
+  text-align:left;padding:.65rem .9rem;
+  font-family:var(--display);font-size:.44rem;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--gold);
+  font-weight:700;white-space:nowrap;
+  border-bottom:1px solid rgba(139,105,20,.15);
+}
+td{
+  padding:.65rem .9rem;
+  border-bottom:1px dotted rgba(139,105,20,.15);
+  color:var(--ink2);
+  font-family:var(--serif);font-size:.9rem;
+}
+tbody tr:hover{background:rgba(139,105,20,.04);}
 
-  .live-dot {
-    display: inline-block; width: 8px; height: 8px;
-    border-radius: 50%; background: #00ff88;
-    box-shadow: 0 0 8px #00ff88;
-    animation: blink 1.5s ease-in-out infinite;
-    margin-right: 6px;
-  }
-  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+.rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  font-family:var(--display);font-size:.42rem;font-weight:700;
+}
+.rank-1{background:rgba(139,105,20,.15);color:var(--gold);border:1px solid rgba(139,105,20,.4);}
+.rank-2{background:rgba(100,100,100,.1);color:var(--ink3);border:1px solid rgba(100,100,100,.3);}
+.rank-3{background:rgba(139,26,26,.1);color:var(--red);border:1px solid rgba(139,26,26,.3);}
+.rank-n{background:rgba(139,105,20,.05);color:var(--ink3);border:1px solid rgba(139,105,20,.15);}
 
-  /* ── MAIN ── */
-  main {
-    position: relative; z-index: 1;
-    padding: 2rem;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
+.bar-cell{display:flex;align-items:center;gap:.6rem;}
+.mini-bar-wrap{flex:1;height:3px;background:rgba(139,105,20,.12);}
+.mini-bar{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));}
 
-  /* ── KPI CARDS ── */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
+/* ===== STATUS PILLS ===== */
+.status-pill{
+  display:inline-block;padding:.12rem .55rem;
+  font-family:var(--display);font-size:.38rem;
+  letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+}
+.pill-green{background:rgba(60,100,40,.08);color:#3a6428;border:1px solid rgba(60,100,40,.2);}
+.pill-blue {background:rgba(20,60,120,.08);color:#1e4a8a;border:1px solid rgba(20,60,120,.2);}
+.pill-yellow{background:rgba(139,105,20,.1);color:var(--gold);border:1px solid rgba(139,105,20,.3);}
+.pill-red  {background:rgba(139,26,26,.08);color:var(--red);border:1px solid rgba(139,26,26,.2);}
 
-  .kpi-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 1.5rem;
-    position: relative;
-    overflow: hidden;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
-    transition: border-color 0.3s, transform 0.3s;
-  }
+/* ===== ORNAMENT ===== */
+.ornament{
+  text-align:center;color:var(--gold);font-size:.85rem;
+  letter-spacing:.2em;margin:1.5rem 0;opacity:.7;
+}
 
-  .kpi-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: var(--accent, linear-gradient(90deg, var(--cyan), var(--magenta)));
-  }
+/* ===== FOOTER ===== */
+.book-footer{
+  position:relative;z-index:1;
+  text-align:center;
+  padding:1.5rem 2rem;
+  border-top:2px double rgba(139,105,20,.4);
+  margin-top:2rem;
+  background:linear-gradient(180deg,transparent,rgba(139,105,20,.04));
+}
+.book-footer p{
+  font-family:var(--fell);font-size:.82rem;
+  color:var(--ink3);font-style:italic;
+}
+.book-footer span{color:var(--red);}
 
-  .kpi-card::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at top left, rgba(0,240,255,0.04), transparent 60%);
-    pointer-events: none;
-  }
-
-  .kpi-card:hover { border-color: rgba(0,240,255,0.4); transform: translateY(-4px); }
-
-  .kpi-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 0.8rem;
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-
-  .kpi-icon { font-size: 1rem; }
-
-  .kpi-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.9rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #fff 0%, var(--cyan) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-  }
-
-  .kpi-sub {
-    font-size: 0.78rem;
-    color: var(--muted);
-    display: flex; align-items: center; gap: 0.4rem;
-  }
-
-  .kpi-trend {
-    color: #00ff88;
-    font-weight: 700;
-    font-size: 0.78rem;
-  }
-
-  /* ── SECTION TITLE ── */
-  .section-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--cyan);
-    font-weight: 700;
-    margin-bottom: 0.3rem;
-  }
-
-  .section-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    color: #fff;
-  }
-
-  /* ── CHART GRID ── */
-  .charts-row {
-    display: grid;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .row-2 { grid-template-columns: 1fr 1fr; }
-  .row-3 { grid-template-columns: 2fr 1fr 1fr; }
-  .row-2-1 { grid-template-columns: 2fr 1fr; }
-
-  .chart-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 1.5rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s;
-  }
-
-  .chart-card:hover { border-color: rgba(0,240,255,0.3); }
-
-  .chart-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    opacity: 0.5;
-  }
-
-  .chart-header {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 1.2rem;
-  }
-
-  .chart-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .chart-subtitle {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 0.2rem;
-  }
-
-  .chart-tag {
-    background: rgba(0,240,255,0.08);
-    border: 1px solid rgba(0,240,255,0.2);
-    color: var(--cyan);
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-
-  .chart-wrap { position: relative; }
-
-  /* ── TABLE ── */
-  .table-wrap { overflow-x: auto; }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-  }
-
-  thead tr {
-    border-bottom: 1px solid rgba(0,240,255,0.2);
-  }
-
-  th {
-    text-align: left;
-    padding: 0.7rem 1rem;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--cyan);
-    font-weight: 700;
-    font-family: 'Orbitron', sans-serif;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 0.7rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    color: rgba(255,255,255,0.85);
-    font-weight: 500;
-  }
-
-  tbody tr:hover { background: rgba(0,240,255,0.03); }
-
-  .rank-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.68rem;
-    font-weight: 700;
-  }
-
-  .rank-1 { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
-  .rank-2 { background: rgba(192,192,192,0.15); color: #c0c0c0; border: 1px solid rgba(192,192,192,0.4); }
-  .rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.4); }
-  .rank-n { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); }
-
-  .bar-cell { display: flex; align-items: center; gap: 0.6rem; }
-
-  .mini-bar-wrap { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; }
-  .mini-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--cyan), var(--magenta)); }
-
-  .status-pill {
-    display: inline-block;
-    padding: 0.15rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .pill-green { background: rgba(0,255,136,0.12); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
-  .pill-blue  { background: rgba(0,102,255,0.12); color: #66aaff; border: 1px solid rgba(0,102,255,0.3); }
-  .pill-yellow { background: rgba(255,237,78,0.12); color: var(--yellow); border: 1px solid rgba(255,237,78,0.3); }
-  .pill-red   { background: rgba(255,60,60,0.12); color: #ff6060; border: 1px solid rgba(255,60,60,0.3); }
-
-  /* ── FOOTER ── */
-  footer {
-    position: relative; z-index: 1;
-    text-align: center;
-    padding: 2rem;
-    color: var(--muted);
-    font-size: 0.78rem;
-    border-top: 1px solid var(--border);
-    margin-top: 2rem;
-    letter-spacing: 0.06em;
-  }
-
-  footer span { color: var(--cyan); }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 1100px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .row-3 { grid-template-columns: 1fr 1fr; }
-    .row-2-1 { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 700px) {
-    main { padding: 1rem; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .row-2, .row-3, .row-2-1 { grid-template-columns: 1fr; }
-    .kpi-value { font-size: 1.4rem; }
-    header { padding: 0.8rem 1rem; }
-    .logo-text { font-size: 0.85rem; }
-  }
+/* ===== RESPONSIVE ===== */
+@media(max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .row-3{grid-template-columns:1fr 1fr;}
+  .row-2-1{grid-template-columns:1fr;}
+}
+@media(max-width:700px){
+  main{padding:1rem 1rem 3rem;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .row-2,.row-3,.row-2-1{grid-template-columns:1fr;}
+  .kpi-value{font-size:1.2rem;}
+  .book-header{padding:.8rem 1rem .6rem;}
+  .book-header-title{font-size:1.3rem;}
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-  <div class="header-left">
-    <div class="logo-text">IRY / SALES DASHBOARD</div>
-    <div class="header-badge">Analytics</div>
-  </div>
-  <div class="header-right">
-    <span class="live-dot"></span>Jan 2023 – Dec 2024
+<!-- BOOK HEADER -->
+<header class="book-header">
+  <div class="book-header-inner">
+    <div class="book-title-group">
+      <div class="book-header-pretitle">Annexure I · Analytics</div>
+      <div class="book-header-title">Ledger of Commerce</div>
+      <div class="book-header-subtitle">A full account of sales transactions, revenue, and performance</div>
+    </div>
+    <div class="book-header-right">
+      <div class="book-header-author">Muhamad Irpan Yasin</div>
+      <div class="book-header-period">January 2023 — December 2024</div>
+      <div class="live-candle"><span class="candle-flame">🕯</span> Verified Record</div>
+    </div>
   </div>
 </header>
 
 <main>
 
   <!-- KPI CARDS -->
+  <div class="ledger-section-label">Summary of Accounts</div>
   <div class="kpi-grid" id="kpiGrid">
     <div class="kpi-card">
-      <div class="kpi-label"><span class="kpi-icon">💰</span> Total Revenue</div>
+      <div class="kpi-icon-label">💰 Total Revenue</div>
       <div class="kpi-value" id="kv1">Rp 0</div>
-      <div class="kpi-sub"><span class="kpi-trend">↑ 2 Tahun</span> data transaksi</div>
+      <div class="kpi-sub">Two years of recorded transactions</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label"><span class="kpi-icon">🛒</span> Total Orders</div>
+      <div class="kpi-icon-label">🛒 Orders Completed</div>
       <div class="kpi-value" id="kv2">0</div>
-      <div class="kpi-sub"><span class="kpi-trend">✓ Selesai</span> dari 3.000 transaksi</div>
+      <div class="kpi-sub">From a total of 3,000 transactions</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label"><span class="kpi-icon">👥</span> Total Pelanggan</div>
+      <div class="kpi-icon-label">👥 Unique Customers</div>
       <div class="kpi-value" id="kv3">0</div>
-      <div class="kpi-sub">unique customers</div>
+      <div class="kpi-sub">Distinct patrons served</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label"><span class="kpi-icon">📈</span> Avg Order Value</div>
+      <div class="kpi-icon-label">📈 Avg. Order Value</div>
       <div class="kpi-value" id="kv4">Rp 0</div>
-      <div class="kpi-sub">per transaksi selesai</div>
+      <div class="kpi-sub">Per completed transaction</div>
     </div>
   </div>
 
-  <!-- ROW 1: Revenue Trend (full width) -->
-  <div class="charts-row" style="margin-bottom:1rem;">
+  <!-- TREND CHART -->
+  <div class="ledger-section-label">Monthly Revenue & Orders — 24 Months</div>
+  <div class="charts-row row-1">
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Revenue & Orders Trend</div>
-          <div class="chart-subtitle">Monthly performance Jan 2023 – Dec 2024</div>
+          <div class="chart-title">Revenue &amp; Orders Trend</div>
+          <div class="chart-subtitle">Monthly performance · January 2023 – December 2024</div>
         </div>
         <div class="chart-tag">24 Bulan</div>
       </div>
-      <div class="chart-wrap" style="height:260px;">
-        <canvas id="trendChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="trendChart"></canvas></div>
     </div>
   </div>
 
-  <!-- ROW 2: Kategori + Channel + Status -->
-  <div class="charts-row row-3" style="margin-bottom:1rem;">
+  <!-- KATEGORI + CHANNEL + STATUS -->
+  <div class="ledger-section-label">Distribution by Category, Channel &amp; Status</div>
+  <div class="charts-row row-3">
     <div class="chart-card">
       <div class="chart-header">
         <div>
@@ -431,9 +371,7 @@
         </div>
         <div class="chart-tag">7 Kategori</div>
       </div>
-      <div class="chart-wrap" style="height:220px;">
-        <canvas id="kategoriChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="kategoriChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-header">
@@ -443,45 +381,34 @@
         </div>
         <div class="chart-tag">6 Channel</div>
       </div>
-      <div class="chart-wrap" style="height:220px;">
-        <canvas id="channelChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="channelChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-header">
         <div>
           <div class="chart-title">Order Status</div>
-          <div class="chart-subtitle">Breakdown status seluruh order</div>
+          <div class="chart-subtitle">Breakdown seluruh order</div>
         </div>
         <div class="chart-tag">3.000 Order</div>
       </div>
-      <div class="chart-wrap" style="height:220px;">
-        <canvas id="statusChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="statusChart"></canvas></div>
     </div>
   </div>
 
-  <!-- ROW 3: Salesperson Table + Top Kota -->
-  <div class="charts-row row-2-1" style="margin-bottom:1rem;">
+  <!-- SALESPERSON TABLE + TOP KOTA -->
+  <div class="ledger-section-label">Salesperson Performance &amp; Regional Revenue</div>
+  <div class="charts-row row-2-1">
     <div class="chart-card">
       <div class="chart-header">
         <div>
           <div class="chart-title">Salesperson Performance</div>
-          <div class="chart-subtitle">Revenue & jumlah order per salesperson</div>
+          <div class="chart-subtitle">Revenue & order count per salesperson</div>
         </div>
         <div class="chart-tag">10 Sales</div>
       </div>
       <div class="table-wrap">
         <table id="spTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nama</th>
-              <th>Revenue</th>
-              <th>Orders</th>
-              <th>Share</th>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>Nama</th><th>Revenue</th><th>Orders</th><th>Share</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -490,18 +417,17 @@
       <div class="chart-header">
         <div>
           <div class="chart-title">Top Kota</div>
-          <div class="chart-subtitle">Revenue per kota</div>
+          <div class="chart-subtitle">Revenue per kota terbesar</div>
         </div>
         <div class="chart-tag">9 Kota</div>
       </div>
-      <div class="chart-wrap" style="height:300px;">
-        <canvas id="kotaChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:300px;"><canvas id="kotaChart"></canvas></div>
     </div>
   </div>
 
-  <!-- ROW 4: Top Produk full width -->
-  <div class="charts-row" style="margin-bottom:1rem;">
+  <!-- TOP PRODUK -->
+  <div class="ledger-section-label">Best-Selling Products by Revenue</div>
+  <div class="charts-row row-1">
     <div class="chart-card">
       <div class="chart-header">
         <div>
@@ -510,20 +436,19 @@
         </div>
         <div class="chart-tag">Best Sellers</div>
       </div>
-      <div class="chart-wrap" style="height:220px;">
-        <canvas id="produkChart"></canvas>
-      </div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="produkChart"></canvas></div>
     </div>
   </div>
 
+  <div class="ornament">— ✦ · · · ✦ · · · ✦ —</div>
+
 </main>
 
-<footer>
-  Built by <span>Muhamad Irpan Yasin</span> &nbsp;·&nbsp; Sales Analytics Dashboard &nbsp;·&nbsp; Data: Jan 2023 – Dec 2024
+<footer class="book-footer">
+  <p>Compiled by <span>Muhamad Irpan Yasin</span> · Sales Analytics Ledger · Data: January 2023 – December 2024</p>
 </footer>
 
 <script>
-// ── DATA ──
 const D = {
   months: ["2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12"],
   monthly_rev: [410955800,389499600,619864600,508419400,545962200,604156600,590282600,649238000,376512600,415469000,369902000,453842500,417207900,489317400,649934900,644148200,708562600,817314400,813318600,886521900,505712400,480108400,379143400,464350600],
@@ -547,259 +472,173 @@ const D = {
   avg_order: 6568598.4,
 };
 
-// ── FORMAT ──
 function fmtRp(v) {
-  if (v >= 1e12) return 'Rp ' + (v/1e12).toFixed(1) + 'T';
-  if (v >= 1e9)  return 'Rp ' + (v/1e9).toFixed(1)  + 'M';
-  if (v >= 1e6)  return 'Rp ' + (v/1e6).toFixed(1)  + 'Jt';
-  return 'Rp ' + v.toLocaleString('id-ID');
-}
-function fmtFull(v) {
-  return 'Rp ' + Math.round(v).toLocaleString('id-ID');
+  if(v>=1e12) return 'Rp '+(v/1e12).toFixed(1)+'T';
+  if(v>=1e9)  return 'Rp '+(v/1e9).toFixed(1)+'M';
+  if(v>=1e6)  return 'Rp '+(v/1e6).toFixed(1)+'Jt';
+  return 'Rp '+v.toLocaleString('id-ID');
 }
 
-// ── KPI COUNTER ANIMATION ──
 function animateCounter(el, target, fmt) {
-  let start = 0, duration = 1600;
-  let startTime = null;
-  function step(ts) {
-    if (!startTime) startTime = ts;
-    let prog = Math.min((ts - startTime) / duration, 1);
-    let ease = 1 - Math.pow(1 - prog, 3);
-    el.textContent = fmt(target * ease);
-    if (prog < 1) requestAnimationFrame(step);
-    else el.textContent = fmt(target);
+  let startTime=null, dur=1600;
+  function step(ts){
+    if(!startTime) startTime=ts;
+    let p=Math.min((ts-startTime)/dur,1);
+    let e=1-Math.pow(1-p,3);
+    el.textContent=fmt(target*e);
+    if(p<1) requestAnimationFrame(step);
+    else el.textContent=fmt(target);
   }
   requestAnimationFrame(step);
 }
 
-window.addEventListener('load', () => {
-  animateCounter(document.getElementById('kv1'), D.total_rev, v => 'Rp ' + (v/1e12).toFixed(2) + 'T');
-  animateCounter(document.getElementById('kv2'), D.total_orders, v => Math.round(v).toLocaleString('id-ID'));
-  animateCounter(document.getElementById('kv3'), D.total_customers, v => Math.round(v).toLocaleString('id-ID'));
-  animateCounter(document.getElementById('kv4'), D.avg_order, v => fmtRp(v));
+window.addEventListener('load', ()=>{
+  animateCounter(document.getElementById('kv1'), D.total_rev, v=>'Rp '+(v/1e12).toFixed(2)+'T');
+  animateCounter(document.getElementById('kv2'), D.total_orders, v=>Math.round(v).toLocaleString('id-ID'));
+  animateCounter(document.getElementById('kv3'), D.total_customers, v=>Math.round(v).toLocaleString('id-ID'));
+  animateCounter(document.getElementById('kv4'), D.avg_order, v=>fmtRp(v));
 });
 
-// ── CHART DEFAULTS ──
-Chart.defaults.color = '#7a7a9a';
-Chart.defaults.font.family = 'Rajdhani';
+// Book-appropriate chart palette — warm sepia tones
+const C_INK = '#1a1209';
+const C_RED = '#8b1a1a';
+const C_GOLD = '#8b6914';
+const C_GOLD2 = '#c4981e';
+const C_INK3 = '#6b5035';
+const C_INK2 = '#3d2e1a';
+
+Chart.defaults.color = C_INK3;
+Chart.defaults.font.family = "'Crimson Text', serif";
 Chart.defaults.font.size = 12;
 Chart.defaults.plugins.legend.display = false;
-Chart.defaults.plugins.tooltip.backgroundColor = '#0d0d14';
-Chart.defaults.plugins.tooltip.borderColor = 'rgba(0,240,255,0.3)';
+Chart.defaults.plugins.tooltip.backgroundColor = '#f4ead5';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(139,105,20,0.4)';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.titleColor = '#00f0ff';
-Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
+Chart.defaults.plugins.tooltip.titleColor = C_RED;
+Chart.defaults.plugins.tooltip.bodyColor = C_INK2;
 Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.cornerRadius = 2;
+Chart.defaults.plugins.tooltip.cornerRadius = 0;
 
-const CYAN = '#00f0ff';
-const MAGENTA = '#ff00ea';
-const YELLOW = '#ffed4e';
-const BLUE = '#0066ff';
-const GREEN = '#00ff88';
+const PALETTE = [
+  'rgba(139,26,26,.75)','rgba(139,105,20,.75)','rgba(60,90,40,.75)',
+  'rgba(30,60,100,.75)','rgba(100,40,80,.75)','rgba(80,60,20,.75)',
+  'rgba(40,80,80,.75)'
+];
 
-// ── 1. TREND CHART ──
-new Chart(document.getElementById('trendChart'), {
-  type: 'bar',
-  data: {
-    labels: D.months.map(m => {
-      const [y, mo] = m.split('-');
-      return ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'][+mo-1] + ' ' + y.slice(2);
-    }),
-    datasets: [
-      {
-        type: 'bar',
-        label: 'Revenue',
-        data: D.monthly_rev,
-        backgroundColor: 'rgba(0,240,255,0.18)',
-        borderColor: 'rgba(0,240,255,0.5)',
-        borderWidth: 1,
-        yAxisID: 'y',
-        borderRadius: 2,
-      },
-      {
-        type: 'line',
-        label: 'Orders',
-        data: D.monthly_orders,
-        borderColor: MAGENTA,
-        backgroundColor: 'rgba(255,0,234,0.1)',
-        borderWidth: 2,
-        pointBackgroundColor: MAGENTA,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        fill: false,
-        tension: 0.4,
-        yAxisID: 'y2',
-      }
+// 1. TREND
+new Chart(document.getElementById('trendChart'),{
+  type:'bar',
+  data:{
+    labels:D.months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'][+mo-1]+' '+y.slice(2);}),
+    datasets:[
+      {type:'bar',label:'Revenue',data:D.monthly_rev,backgroundColor:'rgba(139,105,20,.22)',borderColor:'rgba(139,105,20,.6)',borderWidth:1,yAxisID:'y',borderRadius:0},
+      {type:'line',label:'Orders',data:D.monthly_orders,borderColor:C_RED,backgroundColor:'rgba(139,26,26,.08)',borderWidth:2,pointBackgroundColor:C_RED,pointRadius:3,fill:false,tension:.4,yAxisID:'y2'}
     ]
   },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { display: true, position: 'top', labels: { color: '#7a7a9a', font: { size: 11 }, boxWidth: 12, padding: 16 } },
-      tooltip: {
-        callbacks: {
-          label: ctx => ctx.dataset.label === 'Revenue' ? ' ' + fmtRp(ctx.raw) : ' ' + ctx.raw + ' orders'
-        }
-      }
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:C_INK3,font:{size:11},boxWidth:12,padding:16}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label==='Revenue'?' '+fmtRp(ctx.raw):' '+ctx.raw+' orders'}}
     },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-      y: {
-        position: 'left',
-        grid: { color: 'rgba(255,255,255,0.05)' },
-        ticks: { callback: v => fmtRp(v), font: { size: 10 } }
-      },
-      y2: {
-        position: 'right',
-        grid: { drawOnChartArea: false },
-        ticks: { font: { size: 10 } }
-      }
+    scales:{
+      x:{grid:{color:'rgba(139,105,20,.08)'},ticks:{font:{size:10},maxRotation:45}},
+      y:{position:'left',grid:{color:'rgba(139,105,20,.08)'},ticks:{callback:v=>fmtRp(v),font:{size:10}}},
+      y2:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:10}}}
     }
   }
 });
 
-// ── 2. KATEGORI CHART ──
-const katColors = ['rgba(0,240,255,0.7)','rgba(255,0,234,0.7)','rgba(255,237,78,0.7)','rgba(0,102,255,0.7)','rgba(0,255,136,0.7)','rgba(255,120,50,0.7)','rgba(180,100,255,0.7)'];
-new Chart(document.getElementById('kategoriChart'), {
-  type: 'doughnut',
-  data: {
-    labels: D.kat_labels,
-    datasets: [{
-      data: D.kat_values,
-      backgroundColor: katColors,
-      borderColor: '#050508',
-      borderWidth: 3,
-      hoverOffset: 8,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: { display: true, position: 'right', labels: { color: '#a0a0b8', font: { size: 10 }, padding: 8, boxWidth: 10 } },
-      tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtRp(ctx.raw) } }
+// 2. KATEGORI
+new Chart(document.getElementById('kategoriChart'),{
+  type:'doughnut',
+  data:{labels:D.kat_labels,datasets:[{data:D.kat_values,backgroundColor:PALETTE,borderColor:'#f4ead5',borderWidth:3,hoverOffset:8}]},
+  options:{
+    responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{
+      legend:{display:true,position:'right',labels:{color:C_INK3,font:{size:10},padding:8,boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmtRp(ctx.raw)}}
     }
   }
 });
 
-// ── 3. CHANNEL CHART ──
-const chColors = ['rgba(0,255,136,0.7)','rgba(255,108,0,0.7)','rgba(0,240,255,0.7)','rgba(255,0,120,0.7)','rgba(0,102,255,0.7)','rgba(255,237,78,0.7)'];
-new Chart(document.getElementById('channelChart'), {
-  type: 'polarArea',
-  data: {
-    labels: D.ch_labels,
-    datasets: [{
-      data: D.ch_values,
-      backgroundColor: chColors,
-      borderColor: '#050508',
-      borderWidth: 2,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: true, position: 'right', labels: { color: '#a0a0b8', font: { size: 10 }, padding: 8, boxWidth: 10 } },
-      tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtRp(ctx.raw) } }
+// 3. CHANNEL
+const chColors=['rgba(60,100,40,.7)','rgba(139,26,26,.7)','rgba(139,105,20,.7)','rgba(30,60,120,.7)','rgba(80,40,100,.7)','rgba(100,60,20,.7)'];
+new Chart(document.getElementById('channelChart'),{
+  type:'polarArea',
+  data:{labels:D.ch_labels,datasets:[{data:D.ch_values,backgroundColor:chColors,borderColor:'#f4ead5',borderWidth:2}]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'right',labels:{color:C_INK3,font:{size:10},padding:8,boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmtRp(ctx.raw)}}
     },
-    scales: { r: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { display: false } } }
+    scales:{r:{grid:{color:'rgba(139,105,20,.12)'},ticks:{display:false}}}
   }
 });
 
-// ── 4. STATUS CHART ──
-new Chart(document.getElementById('statusChart'), {
-  type: 'doughnut',
-  data: {
-    labels: D.status_labels,
-    datasets: [{
-      data: D.status_values,
-      backgroundColor: ['rgba(0,255,136,0.75)','rgba(0,102,255,0.75)','rgba(255,237,78,0.75)','rgba(255,60,60,0.75)'],
-      borderColor: '#050508',
-      borderWidth: 3,
-      hoverOffset: 8,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    cutout: '55%',
-    plugins: {
-      legend: { display: true, position: 'bottom', labels: { color: '#a0a0b8', font: { size: 10 }, padding: 8, boxWidth: 10 } },
-      tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.raw.toLocaleString('id-ID') } }
+// 4. STATUS
+new Chart(document.getElementById('statusChart'),{
+  type:'doughnut',
+  data:{labels:D.status_labels,datasets:[{data:D.status_values,backgroundColor:['rgba(60,100,40,.8)','rgba(30,60,120,.8)','rgba(139,105,20,.8)','rgba(139,26,26,.8)'],borderColor:'#f4ead5',borderWidth:3,hoverOffset:8}]},
+  options:{
+    responsive:true,maintainAspectRatio:false,cutout:'55%',
+    plugins:{
+      legend:{display:true,position:'bottom',labels:{color:C_INK3,font:{size:10},padding:8,boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toLocaleString('id-ID')}}
     }
   }
 });
 
-// ── 5. KOTA CHART ──
-new Chart(document.getElementById('kotaChart'), {
-  type: 'bar',
-  data: {
-    labels: D.kota_labels,
-    datasets: [{
-      data: D.kota_values,
-      backgroundColor: D.kota_values.map((_, i) => i === 0 ? 'rgba(0,240,255,0.7)' : 'rgba(0,240,255,0.2)'),
-      borderColor: CYAN,
-      borderWidth: 1,
-      borderRadius: 2,
-    }]
-  },
-  options: {
-    indexAxis: 'y',
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      tooltip: { callbacks: { label: ctx => ' ' + fmtRp(ctx.raw) } }
-    },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => fmtRp(v), font: { size: 9 } } },
-      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+// 5. KOTA
+new Chart(document.getElementById('kotaChart'),{
+  type:'bar',
+  data:{labels:D.kota_labels,datasets:[{data:D.kota_values,backgroundColor:D.kota_values.map((_,i)=>i===0?'rgba(139,26,26,.75)':'rgba(139,105,20,.3)'),borderColor:C_GOLD,borderWidth:1,borderRadius:0}]},
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{tooltip:{callbacks:{label:ctx=>' '+fmtRp(ctx.raw)}}},
+    scales:{
+      x:{grid:{color:'rgba(139,105,20,.08)'},ticks:{callback:v=>fmtRp(v),font:{size:9}}},
+      y:{grid:{display:false},ticks:{font:{size:11}}}
     }
   }
 });
 
-// ── 6. TOP PRODUK CHART ──
-new Chart(document.getElementById('produkChart'), {
-  type: 'bar',
-  data: {
-    labels: D.top_produk_labels.map(l => l.length > 20 ? l.slice(0,18)+'…' : l),
-    datasets: [{
-      data: D.top_produk_values,
-      backgroundColor: 'rgba(255,0,234,0.2)',
-      borderColor: MAGENTA,
-      borderWidth: 1,
-      borderRadius: 2,
-    }]
+// 6. PRODUK
+new Chart(document.getElementById('produkChart'),{
+  type:'bar',
+  data:{
+    labels:D.top_produk_labels.map(l=>l.length>20?l.slice(0,18)+'…':l),
+    datasets:[{data:D.top_produk_values,backgroundColor:'rgba(139,26,26,.2)',borderColor:C_RED,borderWidth:1,borderRadius:0}]
   },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      tooltip: { callbacks: { label: ctx => ' ' + fmtRp(ctx.raw) } }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => fmtRp(v), font: { size: 10 } } }
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{tooltip:{callbacks:{label:ctx=>' '+fmtRp(ctx.raw)}}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10}}},
+      y:{grid:{color:'rgba(139,105,20,.08)'},ticks:{callback:v=>fmtRp(v),font:{size:10}}}
     }
   }
 });
 
-// ── 7. SALESPERSON TABLE ──
-(function buildSpTable() {
-  const totalRev = D.sp_rev.reduce((a,b) => a+b, 0);
-  const sorted = D.sp_labels.map((name, i) => ({ name, rev: D.sp_rev[i], orders: D.sp_orders[i] }))
-    .sort((a,b) => b.rev - a.rev);
-  const maxRev = sorted[0].rev;
-  const tbody = document.querySelector('#spTable tbody');
-  const rankClass = i => ['rank-1','rank-2','rank-3'][i] || 'rank-n';
-  tbody.innerHTML = sorted.map((sp, i) => `
+// 7. SALESPERSON TABLE
+(function(){
+  const totalRev=D.sp_rev.reduce((a,b)=>a+b,0);
+  const sorted=D.sp_labels.map((name,i)=>({name,rev:D.sp_rev[i],orders:D.sp_orders[i]})).sort((a,b)=>b.rev-a.rev);
+  const maxRev=sorted[0].rev;
+  const tbody=document.querySelector('#spTable tbody');
+  const rc=i=>['rank-1','rank-2','rank-3'][i]||'rank-n';
+  tbody.innerHTML=sorted.map((sp,i)=>`
     <tr>
-      <td><span class="rank-badge ${rankClass(i)}">${i+1}</span></td>
-      <td style="font-weight:600;">${sp.name}</td>
-      <td style="font-family:'Orbitron',sans-serif;font-size:0.8rem;color:#00f0ff;">${fmtRp(sp.rev)}</td>
+      <td><span class="rank-badge ${rc(i)}">${i+1}</span></td>
+      <td style="font-weight:600;font-family:var(--fell);font-style:italic;">${sp.name}</td>
+      <td style="font-family:var(--display);font-size:.78rem;color:var(--red);">${fmtRp(sp.rev)}</td>
       <td style="text-align:center;">${sp.orders}</td>
       <td>
         <div class="bar-cell">
           <div class="mini-bar-wrap"><div class="mini-bar" style="width:${(sp.rev/maxRev*100).toFixed(1)}%"></div></div>
-          <span style="font-size:0.72rem;color:#7a7a9a;min-width:38px;">${(sp.rev/totalRev*100).toFixed(1)}%</span>
+          <span style="font-size:.72rem;color:var(--ink3);min-width:38px;">${(sp.rev/totalRev*100).toFixed(1)}%</span>
         </div>
       </td>
     </tr>
