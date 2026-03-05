@@ -12,7 +12,7 @@ const CHAPTERS = {
 }
 const CHAPTER_ORDER = ['home','portfolio','projects','skills','social','travel','contact']
 
-// Placeholder travel photos — ganti dengan URL Cloudinary lu
+
 const TRAVEL_PHOTOS = [
   { src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772681838/Dieng_4_msizry.jpg', dest:'Dieng, Indonesia',    year:'2024' },
   { src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772684165/IMG_20240819_112414_144_o78tbx.jpg', dest:'Merbabu Mount, Indonesia',  year:'2024' },
@@ -25,8 +25,8 @@ const TRAVEL_PHOTOS = [
   { src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772682547/20240505_091651_okt1ey.jpg', dest:'Dufan, Indonesia',      year:'2023' },
 ]
 
-// Media untuk social section — support foto & video Cloudinary
-// Format: { type:'image'|'video', src:'url', thumb:'url-thumbnail-opsional' }
+
+
 const SOCIAL_PLACEHOLDER = {
   1: [
     {type:'image',src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772679021/Donasi_speaker_ke_masjid_igbpb3.jpg'},
@@ -203,7 +203,7 @@ export default function BookPortfolio() {
     return () => window.removeEventListener('keydown', onKey)
   }, [lbOpen, lbImgs.length, current, gotoChapter])
 
-  // Particle dust effect
+  
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
