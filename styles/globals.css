@@ -336,6 +336,17 @@ body { font-family: var(--serif); cursor: default; }
 .social-photo-frame:nth-child(3):hover { transform: rotate(0deg) scale(1.08); border-color: rgba(139,105,20,.65); box-shadow: 4px 6px 18px rgba(0,0,0,.28); }
 .social-photo-frame img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(.2) contrast(1.04); transition: filter .25s, transform .25s; }
 .social-photo-frame:hover img { filter: sepia(0) contrast(1.08); transform: scale(1.06); }
+
+/* Video play button overlay */
+.video-play-btn {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: rgba(244,234,213,.9);
+  background: rgba(10,5,0,.35);
+  pointer-events: none;
+  transition: background .2s;
+}
+.social-photo-frame:hover .video-play-btn { background: rgba(10,5,0,.55); }
 .social-photo-overlay { position: absolute; inset: 0; background: rgba(26,18,9,.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .22s; }
 .social-photo-overlay span { color: rgba(244,234,213,.9); font-size: 1.1rem; }
 .social-photo-frame:hover .social-photo-overlay { opacity: 1; }
@@ -525,6 +536,82 @@ body { font-family: var(--serif); cursor: default; }
 #book-scene.dark-mode .kbd-hint { color: rgba(139,105,20,.3); }
 #book-scene.dark-mode .kbd-key  { border-color: rgba(139,105,20,.2); background: rgba(139,105,20,.04); }
 #book-scene.dark-mode .photo-placeholder-note { color: rgba(139,105,20,.4); }
+
+/* ===== TRAVEL GALLERY ===== */
+.travel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .7rem;
+  margin-top: .5rem;
+}
+.travel-card {
+  cursor: pointer;
+  position: relative;
+}
+/* Polaroid tilt per position */
+.travel-card-0 { transform: rotate(-1.2deg); }
+.travel-card-1 { transform: rotate(.6deg);  }
+.travel-card-2 { transform: rotate(-0.8deg); }
+.travel-card:hover { transform: rotate(0deg) scale(1.04) !important; z-index: 2; }
+
+.travel-card-inner {
+  background: #f8f0dd;
+  padding: .35rem .35rem .65rem;
+  box-shadow: 2px 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.6);
+  border: 1px solid rgba(139,105,20,.2);
+  transition: box-shadow .25s, transform .25s;
+}
+.travel-card:hover .travel-card-inner {
+  box-shadow: 4px 8px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.travel-card-inner img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  filter: sepia(.15) contrast(1.05);
+  transition: filter .3s;
+}
+.travel-card:hover .travel-card-inner img { filter: sepia(0) contrast(1.08); }
+
+.travel-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .3rem .1rem 0;
+  gap: .3rem;
+}
+.travel-dest {
+  font-family: var(--fell);
+  font-size: .68rem;
+  color: var(--ink2);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.travel-year {
+  font-family: var(--display);
+  font-size: .38rem;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  flex-shrink: 0;
+}
+
+/* Dark mode travel */
+#book-scene.dark-mode .travel-card-inner {
+  background: #1e1408;
+  border-color: rgba(139,105,20,.2);
+  box-shadow: 2px 4px 14px rgba(0,0,0,.5);
+}
+#book-scene.dark-mode .travel-dest { color: rgba(210,185,140,.75); }
+#book-scene.dark-mode .travel-year { color: rgba(139,105,20,.5); }
+
+/* Mobile travel grid */
+@media (max-width: 700px) {
+  .travel-grid { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .travel-card-0, .travel-card-1, .travel-card-2 { transform: none; }
+}
 
 /* ===== PRINT / PDF ===== */
 @media print {
