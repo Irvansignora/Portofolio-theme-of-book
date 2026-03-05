@@ -693,7 +693,7 @@ export default function BookPortfolio() {
                 </form>
                 <div className="sec-break" style={{marginTop:'1.5rem'}}>✦ · · · ✦ · · · ✦</div>
                 <p className="book-p" style={{fontFamily:'var(--fell)',fontStyle:'italic',textAlign:'center',fontSize:'.85rem',color:'var(--ink3)'}}>
-                  © MMXXV Muhamad Irpan Yasin — All Rights Reserved
+                  © 2026 Muhamad Irpan Yasin — All Rights Reserved
                 </p>
                 {visitCount && (
                   <p style={{fontFamily:'var(--display)',fontSize:'.42rem',letterSpacing:'.15em',textTransform:'uppercase',color:'var(--ink3)',textAlign:'center',marginTop:'.6rem',opacity:.6}}>
