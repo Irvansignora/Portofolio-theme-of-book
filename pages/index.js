@@ -91,6 +91,8 @@ export default function BookPortfolio() {
   const audioCtx       = useRef(null)
   const canvasRef      = useRef(null)
   const particlesRef   = useRef([])
+  const cursorDotRef   = useRef(null)
+  const cursorRingRef  = useRef(null)
 
   const trigCounters = useCallback(() => {
     setTimeout(() => {
@@ -266,6 +268,43 @@ export default function BookPortfolio() {
 
   useEffect(() => { trigCounters() }, [trigCounters])
 
+  // Custom cursor tracking
+  useEffect(() => {
+    const dot  = cursorDotRef.current
+    const ring = cursorRingRef.current
+    if (!dot || !ring) return
+
+    let mx = 0, my = 0, rx = 0, ry = 0
+    let raf
+
+    const onMove = (e) => {
+      mx = e.clientX; my = e.clientY
+      dot.style.left  = mx + 'px'
+      dot.style.top   = my + 'px'
+    }
+    const animate = () => {
+      rx += (mx - rx) * 0.12
+      ry += (my - ry) * 0.12
+      ring.style.left = rx + 'px'
+      ring.style.top  = ry + 'px'
+      raf = requestAnimationFrame(animate)
+    }
+    const onEnter = () => { dot.classList.add('hovering'); ring.classList.add('hovering') }
+    const onLeave = () => { dot.classList.remove('hovering'); ring.classList.remove('hovering') }
+
+    window.addEventListener('mousemove', onMove)
+    document.querySelectorAll('a,button,[role="button"]').forEach(el => {
+      el.addEventListener('mouseenter', onEnter)
+      el.addEventListener('mouseleave', onLeave)
+    })
+    raf = requestAnimationFrame(animate)
+
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+
   // Hover preview handlers
   const handleLinkEnter = (e, url) => {
     const rect = e.target.getBoundingClientRect()
@@ -302,14 +341,8 @@ export default function BookPortfolio() {
   return (
     <>
       <Head>
-        <title>Muhamad Irpan Yasin — Portfolio</title>
+        <title>Muhamad Irpan Yasin — Sales · Finance · Data Analysis Portfolio</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Muhamad Irpan Yasin — 15+ years expertise in Sales Management, Finance, Data Analysis & Tax. Bandung, West Java, Indonesia." />
-        <meta property="og:title" content="Muhamad Irpan Yasin — Portfolio" />
-        <meta property="og:description" content="15+ years expertise in Sales, Finance, Data Analysis & Tax Management. Open for collaboration." />
-        <meta property="og:image" content="/irvan.jpg" />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
         <style>{`
           @keyframes flipForward {
             0%   { transform:perspective(1600px) rotateY(0deg); box-shadow:4px 0 20px rgba(0,0,0,.12); }
@@ -369,6 +402,10 @@ export default function BookPortfolio() {
 
       {/* Particle dust canvas */}
       <canvas ref={canvasRef} style={{position:'fixed',inset:0,zIndex:0,pointerEvents:'none'}} />
+
+      {/* Custom cursor — quill dot + ring */}
+      <div ref={cursorDotRef}  className="cursor-dot"  />
+      <div ref={cursorRingRef} className="cursor-ring" />
 
       {/* Hover preview popup */}
       {previewUrl && (
@@ -637,11 +674,11 @@ export default function BookPortfolio() {
                             >
                               {isVideo ? (
                                 <>
-                                  <img src={thumb} alt={`${s.title} video ${i+1}`} onError={e=>{e.target.style.background='#1a1005'}}/>
+                                  <img src={thumb} alt={`${s.title} video ${i+1}`} loading="lazy" decoding="async" onError={e=>{e.target.style.background='#1a1005'}}/>
                                   <div className="video-play-btn">▶</div>
                                 </>
                               ) : (
-                                <img src={media.src} alt={`${s.title} ${i+1}`} onError={e=>{if(e.target.closest('.social-photo-frame'))e.target.closest('.social-photo-frame').style.display='none'}}/>
+                                <img src={media.src} alt={`${s.title} ${i+1}`} loading="lazy" decoding="async" onError={e=>{if(e.target.closest('.social-photo-frame'))e.target.closest('.social-photo-frame').style.display='none'}}/>
                               )}
                               <div className="social-photo-overlay"><span>{isVideo ? '▶' : '✦'}</span></div>
                             </div>
@@ -672,7 +709,7 @@ export default function BookPortfolio() {
                       onClick={() => openLB(TRAVEL_PHOTOS.map(p => ({ src: p.src, title: p.dest, cap: p.year })), photo.dest, i)}
                     >
                       <div className="travel-card-inner">
-                        <img src={photo.src} alt={photo.dest} onError={e => e.target.closest('.travel-card').style.display='none'} />
+                        <img src={photo.src} alt={photo.dest} loading="lazy" decoding="async" onError={e => e.target.closest('.travel-card').style.display='none'} />
                         <div className="travel-card-footer">
                           <span className="travel-dest">📍 {photo.dest}</span>
                           <span className="travel-year">{photo.year}</span>
