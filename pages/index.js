@@ -97,9 +97,126 @@ export default function BookPortfolio() {
   const [introPhase, setIntroPhase]       = useState('closed') // 'closed' | 'opening' | 'done'
   const [toolbarOpen, setToolbarOpen]     = useState(false)
   const [konamiActive, setKonamiActive]   = useState(false)
+  const [konamiPhase, setKonamiPhase]     = useState(0) // 0=idle, 1=particles, 2=text, 3=badge
+  const [selectedProject, setSelectedProject] = useState(null) // project detail modal
 
   // Konami code: ↑↑↓↓←→←→BA
   const konamiSeq = useRef([])
+  const konamiParticlesRef = useRef([])
+  const konamiCanvasRef = useRef(null)
+  const konamiAnimRef = useRef(null)
+
+  const fireKonamiParticles = useCallback(() => {
+    const canvas = konamiCanvasRef.current
+    if (!canvas) return
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const ctx = canvas.getContext('2d')
+
+    // Spawn ink explosion particles from center
+    const cx = window.innerWidth / 2
+    const cy = window.innerHeight / 2
+    const particles = []
+    const COLORS = ['#d4a820','#b5890f','#9b1c1c','#f4ead5','#c4431a','#e8d5b0','#fff8e7']
+
+    // Big ink splatter burst
+    for (let i = 0; i < 120; i++) {
+      const angle = (Math.PI * 2 * i) / 120 + Math.random() * 0.3
+      const speed = Math.random() * 18 + 4
+      const size = Math.random() * 6 + 1
+      particles.push({
+        x: cx + (Math.random()-0.5)*40,
+        y: cy + (Math.random()-0.5)*40,
+        vx: Math.cos(angle) * speed * (0.5 + Math.random()),
+        vy: Math.sin(angle) * speed * (0.5 + Math.random()) - Math.random()*6,
+        r: size,
+        alpha: 1,
+        color: COLORS[Math.floor(Math.random()*COLORS.length)],
+        gravity: 0.25 + Math.random()*0.2,
+        decay: 0.012 + Math.random()*0.01,
+        splat: false,
+        splatted: false,
+        ink: Math.random() > 0.5,
+      })
+    }
+    // Extra glitter stars
+    for (let i = 0; i < 60; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const speed = Math.random() * 25 + 8
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 10,
+        r: Math.random() * 3 + 1,
+        alpha: 1,
+        color: '#d4a820',
+        gravity: 0.15,
+        decay: 0.008,
+        star: true,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random()-0.5) * 0.3,
+      })
+    }
+    konamiParticlesRef.current = particles
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const alive = konamiParticlesRef.current.filter(p => p.alpha > 0.02)
+      if (alive.length === 0) return
+
+      alive.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        p.vy += p.gravity
+        p.vx *= 0.98
+        p.alpha -= p.decay
+        if (p.alpha < 0) p.alpha = 0
+
+        ctx.save()
+        ctx.globalAlpha = Math.max(0, p.alpha)
+
+        if (p.star) {
+          // Draw 5-point star
+          ctx.translate(p.x, p.y)
+          p.rotation += p.rotSpeed
+          ctx.rotate(p.rotation)
+          ctx.beginPath()
+          for (let i = 0; i < 5; i++) {
+            const a = (i * Math.PI * 2) / 5 - Math.PI/2
+            const b = a + Math.PI / 5
+            if (i === 0) ctx.moveTo(Math.cos(a)*p.r*2.5, Math.sin(a)*p.r*2.5)
+            else ctx.lineTo(Math.cos(a)*p.r*2.5, Math.sin(a)*p.r*2.5)
+            ctx.lineTo(Math.cos(b)*p.r, Math.sin(b)*p.r)
+          }
+          ctx.closePath()
+          ctx.fillStyle = p.color
+          ctx.shadowColor = p.color
+          ctx.shadowBlur = 8
+          ctx.fill()
+        } else if (p.ink) {
+          // Ink splatter drop
+          ctx.beginPath()
+          ctx.ellipse(p.x, p.y, p.r * (1 + Math.abs(p.vx)*0.05), p.r, Math.atan2(p.vy, p.vx), 0, Math.PI*2)
+          ctx.fillStyle = p.color
+          ctx.shadowColor = p.color
+          ctx.shadowBlur = 4
+          ctx.fill()
+        } else {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2)
+          ctx.fillStyle = p.color
+          ctx.fill()
+        }
+        ctx.restore()
+      })
+
+      konamiParticlesRef.current = alive
+      konamiAnimRef.current = requestAnimationFrame(draw)
+    }
+    cancelAnimationFrame(konamiAnimRef.current)
+    draw()
+  }, [])
+
   useEffect(() => {
     const KONAMI = 'ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a'
     const onKey = (e) => {
@@ -107,13 +224,17 @@ export default function BookPortfolio() {
       konamiSeq.current = [...konamiSeq.current, k].slice(-10)
       if (konamiSeq.current.join(',') === KONAMI) {
         setKonamiActive(true)
+        setKonamiPhase(1)
         konamiSeq.current = []
-        setTimeout(() => setKonamiActive(false), 4000)
+        // Phase sequencing: particles → text → badge → fade
+        setTimeout(() => { fireKonamiParticles(); setKonamiPhase(2) }, 80)
+        setTimeout(() => setKonamiPhase(3), 600)
+        setTimeout(() => { setKonamiActive(false); setKonamiPhase(0); cancelAnimationFrame(konamiAnimRef.current) }, 5500)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [fireKonamiParticles])
 
   const rightScrollRef = useRef(null)
   const leafRef        = useRef(null)
@@ -159,6 +280,7 @@ export default function BookPortfolio() {
   useEffect(() => {
     setSectionVisible(false)
     const t = setTimeout(() => setSectionVisible(true), 80)
+    if (current !== 'projects') setSelectedProject(null)
     return () => clearTimeout(t)
   }, [current])
 
@@ -449,6 +571,9 @@ export default function BookPortfolio() {
           .intro-done #book { opacity:1; transform:rotateX(2deg); }
           @keyframes konamiReveal { from{opacity:0} to{opacity:1} }
           @keyframes konamiText { from{opacity:0;transform:translateY(20px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+          @keyframes konamiFlash { 0%{opacity:0} 30%{opacity:1} 100%{opacity:0} }
+          @keyframes konamiBadge { from{opacity:0;transform:scale(.5) rotate(-12deg)} to{opacity:1;transform:scale(1) rotate(0deg)} }
+          @keyframes konamiKeyReveal { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
           @keyframes candleBlow {
             0%   { opacity:0; transform:scale(1); }
             25%  { opacity:1; transform:scale(1.4); filter:brightness(1.8); }
@@ -558,34 +683,78 @@ export default function BookPortfolio() {
               <div className="book-monogram">MIY</div>
               <div className="book-author-name">M. Irpan Yasin</div>
               <div className="ornament shimmer-ornament">— ✦ —</div>
-              <div className="toc-label">Table of Contents</div>
-              <div className="ornament" style={{fontSize:'.65rem',marginBottom:'.6rem'}}>· · · · · · · · · ·</div>
 
-              <nav className="chapter-list">
-                {[
-                  {id:'home',      num:'I',    title:'Preface',            page:1  },
-                  {id:'portfolio', num:'II',   title:'Portfolio',          page:7  },
-                  {id:'projects',  num:'III',  title:'Projects',           page:14 },
-                  {id:'skills',    num:'IV',   title:'Skills & Expertise', page:21 },
-                  {id:'social',    num:'V',    title:'Social Experience',  page:28 },
-                  {id:'travel',    num:'VI',   title:'Travel Gallery',     page:35 },
-                  {id:'contact',   num:'VII',  title:'Correspondence',     page:42 },
-                ].map(ch => (
-                  <button key={ch.id} className={`chapter-btn${current===ch.id?' active':''}`} onClick={() => gotoChapter(ch.id)}>
-                    <span className="ch-num">{ch.num}</span>
-                    <span className="ch-title">{ch.title}</span>
-                    <span className="ch-dots" />
-                    <span className="ch-page">{ch.page}</span>
-                  </button>
-                ))}
-              </nav>
-
-              <div className="kbd-hint"><span className="kbd-key">←</span><span className="kbd-key">→</span> navigate</div>
-
-              <div className="left-footer">
-                <div className="ornament" style={{fontSize:'.65rem'}}>· · · · · · · · · ·</div>
-                <div className="page-num-left">{pageNums.l}</div>
-              </div>
+              {current === 'projects' ? (
+                <>
+                  <div className="toc-label" style={{fontSize:'.52rem',letterSpacing:'.22em'}}>Index of Projects</div>
+                  <div className="ornament" style={{fontSize:'.65rem',marginBottom:'.6rem'}}>· · · · · · · · · ·</div>
+                  <nav className="chapter-list project-index-list">
+                    {[
+                      {num:'§ I',   title:'Finance Manager',        tag:'Finance Tool'},
+                      {num:'§ II',  title:'Ramadhan Planner',       tag:'Lifestyle App'},
+                      {num:'§ III', title:'School Website',         tag:'School Site'},
+                      {num:'§ IV',  title:'Portfolio Sites',        tag:'Personal Porto'},
+                      {num:'§ V',   title:'Sales ML Analytics',     tag:'Machine Learning'},
+                      {num:'§ VI',  title:'Online Store & POS',     tag:'E-Commerce'},
+                    ].map((p, i) => (
+                      <button
+                        key={p.num}
+                        className={`chapter-btn project-index-btn${selectedProject === i ? ' active' : ''}`}
+                        onClick={() => setSelectedProject(i)}
+                        style={{animationDelay:`${i*0.06}s`}}
+                      >
+                        <span className="ch-num" style={{color:'var(--red)',fontSize:'.42rem'}}>{p.num}</span>
+                        <span className="ch-title" style={{fontSize:'.7rem',lineHeight:1.2}}>{p.title}</span>
+                      </button>
+                    ))}
+                  </nav>
+                  <div className="project-index-hint">
+                    <span style={{fontFamily:'var(--fell)',fontStyle:'italic',fontSize:'.72rem',color:'var(--ink3)'}}>
+                      ← Click to view detail
+                    </span>
+                  </div>
+                  <div className="left-footer" style={{marginTop:'auto'}}>
+                    <div className="ornament" style={{fontSize:'.65rem'}}>· · · · · · · · · ·</div>
+                    <button
+                      className="chapter-btn"
+                      style={{borderTop:'none',padding:'.3rem 0',opacity:.7}}
+                      onClick={() => gotoChapter('portfolio')}
+                    >
+                      <span className="ch-num">←</span>
+                      <span className="ch-title" style={{fontSize:'.62rem'}}>Back to Portfolio</span>
+                    </button>
+                    <div className="page-num-left">{pageNums.l}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="toc-label">Table of Contents</div>
+                  <div className="ornament" style={{fontSize:'.65rem',marginBottom:'.6rem'}}>· · · · · · · · · ·</div>
+                  <nav className="chapter-list">
+                    {[
+                      {id:'home',      num:'I',    title:'Preface',            page:1  },
+                      {id:'portfolio', num:'II',   title:'Portfolio',          page:7  },
+                      {id:'projects',  num:'III',  title:'Projects',           page:14 },
+                      {id:'skills',    num:'IV',   title:'Skills & Expertise', page:21 },
+                      {id:'social',    num:'V',    title:'Social Experience',  page:28 },
+                      {id:'travel',    num:'VI',   title:'Travel Gallery',     page:35 },
+                      {id:'contact',   num:'VII',  title:'Correspondence',     page:42 },
+                    ].map(ch => (
+                      <button key={ch.id} className={`chapter-btn${current===ch.id?' active':''}`} onClick={() => gotoChapter(ch.id)}>
+                        <span className="ch-num">{ch.num}</span>
+                        <span className="ch-title">{ch.title}</span>
+                        <span className="ch-dots" />
+                        <span className="ch-page">{ch.page}</span>
+                      </button>
+                    ))}
+                  </nav>
+                  <div className="kbd-hint"><span className="kbd-key">←</span><span className="kbd-key">→</span> navigate</div>
+                  <div className="left-footer">
+                    <div className="ornament" style={{fontSize:'.65rem'}}>· · · · · · · · · ·</div>
+                    <div className="page-num-left">{pageNums.l}</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -721,34 +890,205 @@ export default function BookPortfolio() {
 
               {/* ===== PROJECTS ===== */}
               <div className={`content-section${current==='projects'?' active':''}`}>
-                <div className="ch-heading">
-                  <span className="ch-heading-num">Chapter III</span>
-                  <h2 className="ch-heading-title">Development Projects <em>— Live &amp; Deployed</em></h2>
-                </div>
-                <p className="book-p dropcap">A collection of digital undertakings — real-world applications conceived, constructed, and launched into the world. Each endeavour addresses a genuine need, from personal finance management to community-focused applications.</p>
-                <div className="sec-break">✦ · · · ✦</div>
-                {[
-                  {num:'§ I',  tag:'Finance Tool',      title:'Finance Manager',                desc:'A smart personal finance manager — track income, expenses, and cash flow in real-time. Built for clarity, speed, and everyday use.',                                                                tech:['Firebase','React','Realtime DB'],        links:[{href:'https://monflow-v2.web.app/',label:'→ Visit Application'}]},
-                  {num:'§ II', tag:'Lifestyle App',     title:'Ramadhan Planner',               desc:'Plan your most meaningful month with purpose. Track ibadah, set daily goals, and stay consistent throughout Ramadhan — all in one beautiful application.',                                          tech:['Next.js','Vercel','LocalStorage'],       links:[{href:'https://ramadhan-planner2.vercel.app/',label:'→ Visit Application'}]},
-                  {num:'§ III',tag:'School Website',    title:'Early Childhood School Website', desc:"A clean, welcoming website for an early childhood school. Built to help parents learn about the school's programmes and how to enrol their little ones.",                                           tech:['Next.js','Tailwind','Vercel'],           links:[{href:'https://paud-fajar-pagi.vercel.app/',label:'→ Visit Application'}]},
-                  {num:'§ IV', tag:'Personal Portfolio',title:'Portfolio Sites',                desc:'Custom-built portfolio websites for real clients — designed to make strong first impressions and showcase their unique skills to prospective employers and collaborators.',                           tech:['Next.js','CSS','Vercel'],                links:[{href:'https://m-nazar.vercel.app/',label:'→ Nazar Portfolio'},{href:'https://portofolio-anisa.vercel.app/',label:'→ Anisa Portfolio'}]},
-                  {num:'§ V',  tag:'Machine Learning',  title:'Sales ML Analytics',             desc:'An AI-powered analytics platform using machine learning to uncover sales patterns, forecast trends, and deliver actionable business insights in real-time.',                                         tech:['Python','Streamlit','ML'],               links:[{href:'https://sales-ml-analytics.streamlit.app/',label:'→ Visit Application'}]},
-                  {num:'§ VI', tag:'E-Commerce & POS',  title:'Online Store & POS System',      desc:'Full-featured digital commerce solutions — from a fresh grocery e-commerce store with cart & checkout, to a coffee shop POS system with real-time transaction flow.',                               tech:['Next.js','Tailwind','Vercel'],           links:[{href:'https://ecommerce-freshmarket.vercel.app/',label:'→ FreshMarket Store'},{href:'https://demo-coffee-shop-v2.vercel.app/',label:'→ Coffee Shop POS'}]},
-                ].map((item, idx) => (
-                  <div key={item.title} className="porto-entry stagger-entry" style={{animationDelay:`${idx * 0.09}s`}}>
-                    <div className="porto-entry-header"><span className="porto-num">{item.num}</span><span className="porto-tag">{item.tag}</span></div>
-                    <div className="porto-title">{item.title}</div>
-                    <p className="porto-desc">{item.desc}</p>
-                    <div className="porto-tech">{item.tech.map(t => <span key={t} className="porto-pill">{t}</span>)}</div>
-                    <div className="porto-links">{item.links.map(l => (
-                      <a key={l.label} className="porto-link" href={l.href} target="_blank" rel="noopener"
-                        onMouseEnter={e => handleLinkEnter(e, l.href)}
-                        onMouseLeave={handleLinkLeave}
-                      >{l.label}</a>
-                    ))}</div>
-                  </div>
-                ))}
-                <div className="page-num-right">{pageNums.r}</div>
+                {selectedProject === null ? (
+                  <>
+                    <div className="ch-heading">
+                      <span className="ch-heading-num">Chapter III</span>
+                      <h2 className="ch-heading-title">Development Projects <em>— Live &amp; Deployed</em></h2>
+                    </div>
+                    <p className="book-p dropcap">A collection of digital undertakings — real-world applications conceived, constructed, and launched into the world. Each endeavour addresses a genuine need, from personal finance management to community-focused applications.</p>
+                    <div className="sec-break">✦ · · · ✦</div>
+                    <p className="book-p" style={{fontFamily:'var(--fell)',fontStyle:'italic',fontSize:'.88rem',color:'var(--ink3)',textAlign:'center',border:'1px solid rgba(181,137,15,.2)',padding:'.8rem 1.2rem',background:'rgba(181,137,15,.03)'}}>
+                      ← Select a project from the index on the left to view its full details
+                    </p>
+                    <div className="projects-preview-grid">
+                      {[
+                        {num:'§ I',   tag:'Finance Tool',      title:'Finance Manager',                desc:'Smart personal finance tracker with real-time Firebase sync.',                tech:['Firebase','React','Realtime DB'],   href:'https://monflow-v2.web.app/'},
+                        {num:'§ II',  tag:'Lifestyle App',     title:'Ramadhan Planner',               desc:'Track ibadah and goals throughout Ramadhan in one beautiful app.',           tech:['Next.js','Vercel','LocalStorage'],  href:'https://ramadhan-planner2.vercel.app/'},
+                        {num:'§ III', tag:'School Website',    title:'School Website',                 desc:'Welcoming early childhood school site for enrolment and info.',               tech:['Next.js','Tailwind','Vercel'],      href:'https://paud-fajar-pagi.vercel.app/'},
+                        {num:'§ IV',  tag:'Personal Porto',    title:'Portfolio Sites',                desc:'Custom-built portfolios designed to make strong first impressions.',          tech:['Next.js','CSS','Vercel'],           href:'https://m-nazar.vercel.app/'},
+                        {num:'§ V',   tag:'Machine Learning',  title:'Sales ML Analytics',             desc:'AI-powered sales analytics platform with ML forecasting.',                   tech:['Python','Streamlit','ML'],          href:'https://sales-ml-analytics.streamlit.app/'},
+                        {num:'§ VI',  tag:'E-Commerce & POS',  title:'Online Store & POS',             desc:'Digital commerce from grocery e-store to coffee shop POS system.',           tech:['Next.js','Tailwind','Vercel'],      href:'https://ecommerce-freshmarket.vercel.app/'},
+                      ].map((item, idx) => (
+                        <div key={item.title}
+                          className="proj-preview-card stagger-entry"
+                          style={{animationDelay:`${idx*0.08}s`}}
+                          onClick={() => setSelectedProject(idx)}
+                        >
+                          <div className="proj-preview-num">{item.num}</div>
+                          <div className="proj-preview-tag">{item.tag}</div>
+                          <div className="proj-preview-title">{item.title}</div>
+                          <p className="proj-preview-desc">{item.desc}</p>
+                          <div className="proj-preview-tech">{item.tech.map(t=><span key={t} className="porto-pill">{t}</span>)}</div>
+                          <div className="proj-preview-open">Open details →</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  /* PROJECT DETAIL VIEW */
+                  (() => {
+                    const PROJECTS_DATA = [
+                      {
+                        num:'§ I', tag:'Finance Tool', title:'Finance Manager',
+                        subtitle:'Personal Finance & Cash Flow Tracker',
+                        desc:'A smart personal finance manager built for clarity, speed, and everyday use. Track income, expenses, and cash flow in real-time with an intuitive dashboard. Built on Firebase for instant data sync across devices, ensuring your financial data is always up-to-date.',
+                        story:'This project was born from a personal need — managing monthly finances across multiple income streams. The goal was to build something fast, beautiful, and genuinely useful for daily use.',
+                        tech:['Firebase','React','Realtime DB','CSS3','Vercel'],
+                        links:[{href:'https://monflow-v2.web.app/',label:'→ Visit Application'}],
+                        highlights:['Real-time Firebase sync','Multi-category expense tracking','Monthly cash flow charts','Mobile-responsive design'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://monflow-v2.web.app/',
+                      },
+                      {
+                        num:'§ II', tag:'Lifestyle App', title:'Ramadhan Planner',
+                        subtitle:'Spiritual Goal Tracker for Ramadhan',
+                        desc:'Plan your most meaningful month with purpose. Track ibadah, set daily goals, and stay consistent throughout Ramadhan — all in one beautiful application. Designed with intentionality and simplicity at its core.',
+                        story:'Built as a personal Ramadhan companion, this app emerged from the desire to bring more structure and reflection to the holy month. The minimalist design was intentional — keeping focus on what truly matters.',
+                        tech:['Next.js','Vercel','LocalStorage','Tailwind CSS'],
+                        links:[{href:'https://ramadhan-planner2.vercel.app/',label:'→ Visit Application'}],
+                        highlights:['Daily ibadah tracker','Goal setting & streaks','Beautiful minimalist UI','Offline-capable with LocalStorage'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://ramadhan-planner2.vercel.app/',
+                      },
+                      {
+                        num:'§ III', tag:'School Website', title:'Early Childhood School Website',
+                        subtitle:'PAUD Fajar Pagi — School Web Presence',
+                        desc:"A clean, welcoming website for an early childhood school. Built to help parents learn about the school's programmes and how to enrol their little ones. Focuses on clarity, warmth, and ease of navigation.",
+                        story:'Commissioned to help a local early childhood school establish a professional web presence. The design prioritises warmth and approachability — reflecting the school\'s caring environment.',
+                        tech:['Next.js','Tailwind CSS','Vercel','Responsive Design'],
+                        links:[{href:'https://paud-fajar-pagi.vercel.app/',label:'→ Visit Application'}],
+                        highlights:['Parent-friendly navigation','School programme info','Enrolment information','Mobile-first design'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://paud-fajar-pagi.vercel.app/',
+                      },
+                      {
+                        num:'§ IV', tag:'Personal Portfolio', title:'Portfolio Sites',
+                        subtitle:'Custom Portfolios for Real Clients',
+                        desc:'Custom-built portfolio websites for real clients — designed to make strong first impressions and showcase their unique skills to prospective employers and collaborators. Each site is tailored to the individual.',
+                        story:'Every portfolio tells a story. These projects involved deep collaboration with each client to understand their personality, goals, and the impression they wanted to leave on the world.',
+                        tech:['Next.js','CSS3','Vercel','Responsive Design'],
+                        links:[{href:'https://m-nazar.vercel.app/',label:'→ Nazar Portfolio'},{href:'https://portofolio-anisa.vercel.app/',label:'→ Anisa Portfolio'}],
+                        highlights:['Tailored to each client','Custom animations','SEO-optimised','Fast loading performance'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://m-nazar.vercel.app/',
+                      },
+                      {
+                        num:'§ V', tag:'Machine Learning', title:'Sales ML Analytics',
+                        subtitle:'AI-Powered Sales Intelligence Platform',
+                        desc:'An AI-powered analytics platform using machine learning to uncover sales patterns, forecast trends, and deliver actionable business insights in real-time. Built with Python and Streamlit for rapid deployment.',
+                        story:'Combining professional sales experience with data science skills, this project bridges the gap between raw sales data and meaningful business decisions. Machine learning models were trained on real sales patterns.',
+                        tech:['Python','Streamlit','Scikit-learn','Pandas','Plotly'],
+                        links:[{href:'https://sales-ml-analytics.streamlit.app/',label:'→ Visit Application'}],
+                        highlights:['ML-powered trend forecasting','Interactive Plotly dashboards','Sales pattern recognition','Actionable business insights'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://sales-ml-analytics.streamlit.app/',
+                      },
+                      {
+                        num:'§ VI', tag:'E-Commerce & POS', title:'Online Store & POS System',
+                        subtitle:'Full-Featured Digital Commerce Solutions',
+                        desc:'Full-featured digital commerce solutions — from a fresh grocery e-commerce store with cart & checkout, to a coffee shop POS system with real-time transaction flow. Two complete systems built for real business use.',
+                        story:'Two separate projects with a shared goal: making commerce digital, smooth, and reliable. The grocery store focuses on customer experience; the POS system on operational efficiency for staff.',
+                        tech:['Next.js','Tailwind CSS','Vercel','Context API'],
+                        links:[{href:'https://ecommerce-freshmarket.vercel.app/',label:'→ FreshMarket Store'},{href:'https://demo-coffee-shop-v2.vercel.app/',label:'→ Coffee Shop POS'}],
+                        highlights:['Full cart & checkout flow','Real-time POS transactions','Inventory management','Clean, professional UI'],
+                        status:'Live & Deployed',
+                        year:'2024',
+                        preview:'https://ecommerce-freshmarket.vercel.app/',
+                      },
+                    ]
+                    const proj = PROJECTS_DATA[selectedProject]
+                    return (
+                      <div className="project-detail-page" key={selectedProject}>
+                        <div className="proj-detail-back">
+                          <button className="proj-back-btn" onClick={() => setSelectedProject(null)}>
+                            ← Back to Overview
+                          </button>
+                          <span className="proj-detail-status">{proj.status}</span>
+                        </div>
+
+                        <div className="proj-detail-header">
+                          <div style={{display:'flex',alignItems:'center',gap:'.7rem',marginBottom:'.5rem',flexWrap:'wrap'}}>
+                            <span className="porto-num" style={{fontSize:'.6rem'}}>{proj.num}</span>
+                            <span className="porto-tag">{proj.tag}</span>
+                            <span style={{fontFamily:'var(--display)',fontSize:'.38rem',letterSpacing:'.15em',color:'rgba(181,137,15,.5)',textTransform:'uppercase'}}>{proj.year}</span>
+                          </div>
+                          <h2 className="ch-heading-title" style={{fontSize:'clamp(1.2rem,2.5vw,1.8rem)',marginBottom:'.3rem'}}>{proj.title}</h2>
+                          <p style={{fontFamily:'var(--fell)',fontStyle:'italic',fontSize:'.9rem',color:'var(--ink3)',marginBottom:'0'}}>{proj.subtitle}</p>
+                        </div>
+
+                        <div className="proj-detail-divider">✦ · · · ✦</div>
+
+                        <div className="proj-detail-body">
+                          <div className="proj-detail-section">
+                            <div className="proj-detail-section-label">About this Project</div>
+                            <p className="book-p" style={{marginBottom:'.6rem'}}>{proj.desc}</p>
+                          </div>
+
+                          <div className="proj-detail-section">
+                            <div className="proj-detail-section-label">The Story</div>
+                            <p className="book-p" style={{fontStyle:'italic',fontFamily:'var(--fell)',borderLeft:'3px solid rgba(181,137,15,.3)',paddingLeft:'1rem',color:'var(--ink2)',lineHeight:'1.85'}}>{proj.story}</p>
+                          </div>
+
+                          <div className="proj-detail-section">
+                            <div className="proj-detail-section-label">Key Highlights</div>
+                            <div className="proj-highlights-list">
+                              {proj.highlights.map((h,i) => (
+                                <div key={i} className="proj-highlight-item">
+                                  <span className="proj-highlight-dot">✦</span>
+                                  <span>{h}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="proj-detail-section">
+                            <div className="proj-detail-section-label">Technology Stack</div>
+                            <div className="porto-tech" style={{gap:'.4rem',flexWrap:'wrap'}}>
+                              {proj.tech.map(t => <span key={t} className="porto-pill" style={{padding:'.22rem .65rem',fontSize:'.42rem'}}>{t}</span>)}
+                            </div>
+                          </div>
+
+                          <div className="proj-detail-section">
+                            <div className="proj-detail-section-label">Live Application</div>
+                            <div className="proj-detail-links">
+                              {proj.links.map(l => (
+                                <a key={l.label} href={l.href} target="_blank" rel="noopener"
+                                  className="proj-detail-link-btn"
+                                  onMouseEnter={e => handleLinkEnter(e, l.href)}
+                                  onMouseLeave={handleLinkLeave}
+                                >{l.label}</a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="proj-detail-nav">
+                          <button
+                            className="proj-nav-btn"
+                            onClick={() => setSelectedProject(i => Math.max(0, i-1))}
+                            disabled={selectedProject === 0}
+                          >← Previous</button>
+                          <span style={{fontFamily:'var(--display)',fontSize:'.4rem',letterSpacing:'.2em',color:'rgba(181,137,15,.5)'}}>
+                            {selectedProject+1} / 6
+                          </span>
+                          <button
+                            className="proj-nav-btn"
+                            onClick={() => setSelectedProject(i => Math.min(5, i+1))}
+                            disabled={selectedProject === 5}
+                          >Next →</button>
+                        </div>
+
+                        <div className="page-num-right">{pageNums.r}</div>
+                      </div>
+                    )
+                  })()
+                )}
               </div>
 
               {/* ===== SKILLS ===== */}
@@ -1112,32 +1452,144 @@ export default function BookPortfolio() {
           </div>
         </div>
       )}
-      {/* Konami Easter Egg — ↑↑↓↓←→←→BA */}
+      {/* Konami Easter Egg — EPIC VERSION */}
       {konamiActive && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:99990,
-          display:'flex', alignItems:'center', justifyContent:'center',
-          pointerEvents:'none', flexDirection:'column', gap:'1rem',
-          background:'rgba(5,2,0,.75)',
-          animation:'konamiReveal .35s cubic-bezier(.16,1,.3,1) both',
-        }}>
-          <div style={{
-            fontFamily:'var(--fraktur)', fontSize:'clamp(2.5rem,8vw,5rem)',
-            color:'var(--gold2)', textAlign:'center', lineHeight:1.2,
-            textShadow:'0 0 40px rgba(212,168,32,.9), 0 0 80px rgba(212,168,32,.5)',
-            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .1s both',
-          }}>✦ Cheat Code Activated ✦</div>
-          <div style={{
-            fontFamily:'var(--display)', fontSize:'.5rem', letterSpacing:'.3em',
-            color:'rgba(212,168,32,.65)', textTransform:'uppercase',
-            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .2s both',
-          }}>You have discovered the ancient manuscript</div>
-          <div style={{
-            fontFamily:'var(--fell)', fontSize:'1rem', fontStyle:'italic',
-            color:'rgba(244,234,213,.45)', marginTop:'.5rem',
-            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .3s both',
-          }}>↑ ↑ ↓ ↓ ← → ← → B A</div>
-        </div>
+        <>
+          {/* Particle canvas layer */}
+          <canvas ref={konamiCanvasRef} style={{
+            position:'fixed', inset:0, zIndex:99985,
+            pointerEvents:'none',
+            width:'100vw', height:'100vh',
+          }}/>
+
+          {/* Ink splatter flash */}
+          {konamiPhase >= 1 && (
+            <div style={{
+              position:'fixed', inset:0, zIndex:99986,
+              background:'radial-gradient(ellipse at 50% 50%, rgba(212,168,32,.18) 0%, rgba(155,28,28,.12) 40%, transparent 70%)',
+              pointerEvents:'none',
+              animation:'konamiFlash .3s ease-out forwards',
+            }}/>
+          )}
+
+          {/* Main overlay */}
+          {konamiPhase >= 2 && (
+            <div style={{
+              position:'fixed', inset:0, zIndex:99990,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              pointerEvents:'none', flexDirection:'column', gap:'1rem',
+              background:'radial-gradient(ellipse at 50% 50%, rgba(5,2,0,.88) 0%, rgba(5,2,0,.82) 60%, rgba(5,2,0,.6) 100%)',
+              animation:'konamiReveal .4s cubic-bezier(.16,1,.3,1) both',
+            }}>
+              {/* Decorative border */}
+              <div style={{
+                position:'absolute', inset:'5%',
+                border:'1px solid rgba(212,168,32,.2)',
+                pointerEvents:'none',
+              }}/>
+              <div style={{
+                position:'absolute', inset:'5.5%',
+                border:'1px solid rgba(212,168,32,.1)',
+                pointerEvents:'none',
+              }}/>
+
+              {/* Corner ornaments */}
+              {['topleft','topright','bottomleft','bottomright'].map(pos => (
+                <div key={pos} style={{
+                  position:'absolute',
+                  top: pos.includes('top') ? '5.5%' : 'auto',
+                  bottom: pos.includes('bottom') ? '5.5%' : 'auto',
+                  left: pos.includes('left') ? '5.5%' : 'auto',
+                  right: pos.includes('right') ? '5.5%' : 'auto',
+                  fontFamily:'var(--fraktur)', fontSize:'1.2rem',
+                  color:'rgba(212,168,32,.4)',
+                  lineHeight:1,
+                }}>✦</div>
+              ))}
+
+              {/* Key sequence display */}
+              <div style={{
+                display:'flex', gap:'.4rem', marginBottom:'.5rem',
+                animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .05s both',
+              }}>
+                {['↑','↑','↓','↓','←','→','←','→','B','A'].map((k,i) => (
+                  <span key={i} style={{
+                    fontFamily:'var(--display)', fontSize:'.52rem',
+                    color:'rgba(212,168,32,.7)',
+                    border:'1px solid rgba(212,168,32,.3)',
+                    background:'rgba(212,168,32,.06)',
+                    padding:'.2rem .38rem',
+                    letterSpacing:'.05em',
+                    animation:`konamiKeyReveal .1s ease ${i*0.06}s both`,
+                  }}>{k}</span>
+                ))}
+              </div>
+
+              {/* Main title */}
+              <div style={{
+                fontFamily:'var(--fraktur)', fontSize:'clamp(2.5rem,8vw,5.5rem)',
+                color:'var(--gold2)', textAlign:'center', lineHeight:1.1,
+                textShadow:'0 0 40px rgba(212,168,32,.9), 0 0 80px rgba(212,168,32,.5), 0 0 140px rgba(212,168,32,.2)',
+                animation:'konamiText .6s cubic-bezier(.16,1,.3,1) .15s both',
+              }}>✦ Cheat Activated ✦</div>
+
+              {/* Subtitle */}
+              <div style={{
+                fontFamily:'var(--display)', fontSize:'.55rem', letterSpacing:'.4em',
+                color:'rgba(212,168,32,.65)', textTransform:'uppercase',
+                animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .25s both',
+              }}>Ancient Manuscript Unlocked</div>
+
+              {/* Badge */}
+              {konamiPhase >= 3 && (
+                <div style={{
+                  marginTop:'1rem',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:'.6rem',
+                  animation:'konamiBadge .7s cubic-bezier(.34,1.56,.64,1) .1s both',
+                }}>
+                  {/* Wax seal badge */}
+                  <div style={{
+                    width:'90px', height:'90px', borderRadius:'50%',
+                    background:'radial-gradient(ellipse at 35% 35%, #c4431a 0%, #7a1a08 60%, #4a0e05 100%)',
+                    border:'3px solid rgba(212,168,32,.7)',
+                    boxShadow:'0 0 0 6px rgba(212,168,32,.15), 0 0 30px rgba(212,168,32,.4), 0 0 60px rgba(155,28,28,.3), inset 0 2px 4px rgba(255,200,100,.2)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    flexDirection:'column', gap:'.1rem',
+                    position:'relative',
+                  }}>
+                    <div style={{fontFamily:'var(--fraktur)', fontSize:'1.8rem', color:'rgba(244,234,213,.95)', lineHeight:1, textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>MIY</div>
+                    <div style={{fontFamily:'var(--display)', fontSize:'.28rem', letterSpacing:'.15em', color:'rgba(244,234,213,.6)', textTransform:'uppercase'}}>Secret</div>
+                    {/* Seal ring text */}
+                    <div style={{
+                      position:'absolute', inset:0, borderRadius:'50%',
+                      border:'1px solid rgba(212,168,32,.3)',
+                    }}/>
+                  </div>
+                  {/* Achievement label */}
+                  <div style={{
+                    fontFamily:'var(--display)', fontSize:'.48rem', letterSpacing:'.25em',
+                    color:'rgba(212,168,32,.8)', textTransform:'uppercase',
+                    textAlign:'center',
+                    textShadow:'0 0 12px rgba(212,168,32,.4)',
+                  }}>🏆 Secret Achievement Unlocked</div>
+                  <div style={{
+                    fontFamily:'var(--fell)', fontSize:'.82rem', fontStyle:'italic',
+                    color:'rgba(244,234,213,.45)', textAlign:'center', maxWidth:'380px',
+                    lineHeight:1.7,
+                  }}>"Thou hast discovered what few dare seek — the hidden seal of the manuscript."</div>
+                </div>
+              )}
+
+              {/* Fade-out hint */}
+              <div style={{
+                position:'absolute', bottom:'8%',
+                fontFamily:'var(--display)', fontSize:'.38rem', letterSpacing:'.2em',
+                color:'rgba(212,168,32,.3)', textTransform:'uppercase',
+                animation:'otwPulse 1.5s ease-in-out infinite',
+              }}>— Fading in a moment —</div>
+            </div>
+          )}
+        </>
       )}
     </>
   )
