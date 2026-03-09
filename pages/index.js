@@ -1062,29 +1062,6 @@ export default function BookPortfolio() {
 
                         <div className="proj-detail-divider">✦ · · · ✦</div>
 
-                        {/* Live preview thumbnail */}
-                        <div className="proj-preview-thumbnail">
-                          <div className="proj-preview-thumb-bar">
-                            <span className="proj-thumb-dot" style={{background:'#ff5f57'}}/>
-                            <span className="proj-thumb-dot" style={{background:'#febc2e'}}/>
-                            <span className="proj-thumb-dot" style={{background:'#28c840'}}/>
-                            <span style={{fontFamily:'var(--display)',fontSize:'.32rem',letterSpacing:'.1em',color:'rgba(181,137,15,.5)',flex:1,textAlign:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{proj.links[0]?.href}</span>
-                            <a href={proj.links[0]?.href} target="_blank" rel="noopener" style={{fontFamily:'var(--display)',fontSize:'.3rem',color:'rgba(181,137,15,.5)',textDecoration:'none',whiteSpace:'nowrap'}}>↗ open</a>
-                          </div>
-                          <div className="proj-preview-thumb-body">
-                            <iframe
-                              src={proj.links[0]?.href}
-                              title={proj.title}
-                              loading="lazy"
-                              sandbox="allow-scripts allow-same-origin"
-                              className="proj-preview-iframe"
-                            />
-                            <div className="proj-preview-iframe-overlay" onClick={() => window.open(proj.links[0]?.href,'_blank')}>
-                              <span className="proj-preview-iframe-hint">Click to open app ↗</span>
-                            </div>
-                          </div>
-                        </div>
-
                         <div className="proj-detail-body">
                           <div className="proj-detail-section">
                             <div className="proj-detail-section-label">About this Project</div>
