@@ -88,6 +88,7 @@ export default function BookPortfolio() {
   const [flipQuote, setFlipQuote]         = useState('')
   const [showQuote, setShowQuote]         = useState(false)
   const [darkMode, setDarkMode]           = useState(false)
+  const [darkTransition, setDarkTransition] = useState(null) // 'todark' | 'tolight' | null
   const [visitCount, setVisitCount]       = useState(null)
   const [sectionVisible, setSectionVisible] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -395,9 +396,10 @@ export default function BookPortfolio() {
   const doSubmit = async (e) => {
     e.preventDefault(); setFormSending(true); setFormError(false)
     const data = new FormData(e.target)
+    data.append('_replyto', data.get('email'))
     try {
-      const res = await fetch('https://formspree.io/f/xpwzgknd', { method:'POST', body:data, headers:{ Accept:'application/json' } })
-      if (res.ok) { setFormSent(true); e.target.reset(); setTimeout(() => setFormSent(false), 5000) }
+      const res = await fetch('https://formspree.io/f/mbdzdorp', { method:'POST', body:data, headers:{ Accept:'application/json' } })
+      if (res.ok) { setFormSent(true); e.target.reset(); setTimeout(() => setFormSent(false), 6000) }
       else { setFormError(true); setTimeout(() => setFormError(false), 4000) }
     } catch { setFormError(true); setTimeout(() => setFormError(false), 4000) }
     setFormSending(false)
@@ -447,6 +449,18 @@ export default function BookPortfolio() {
           .intro-done #book { opacity:1; transform:rotateX(2deg); }
           @keyframes konamiReveal { from{opacity:0} to{opacity:1} }
           @keyframes konamiText { from{opacity:0;transform:translateY(20px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+          @keyframes candleBlow {
+            0%   { opacity:0; transform:scale(1); }
+            25%  { opacity:1; transform:scale(1.4); filter:brightness(1.8); }
+            60%  { opacity:.7; transform:scale(1.8); filter:brightness(.4); }
+            100% { opacity:0; transform:scale(2.2); filter:brightness(0); }
+          }
+          @keyframes candleLight {
+            0%   { opacity:0; transform:scale(2); filter:brightness(0); }
+            30%  { opacity:1; transform:scale(1.6); filter:brightness(2.5); }
+            70%  { opacity:.6; transform:scale(1.2); filter:brightness(1.2); }
+            100% { opacity:0; transform:scale(1);   filter:brightness(1); }
+          }
         `}</style>
       </Head>
 
@@ -456,6 +470,17 @@ export default function BookPortfolio() {
         introPhase === 'opening' ? 'intro-opening' : '',
         konamiActive ? 'konami-mode' : '',
       ].filter(Boolean).join(' ')}>
+
+      {/* Candle blow transition overlay */}
+      {darkTransition && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:99980, pointerEvents:'none',
+          background: darkTransition==='todark'
+            ? 'radial-gradient(ellipse at 50% 40%, rgba(255,200,80,.18) 0%, rgba(10,5,0,.0) 40%)'
+            : 'radial-gradient(ellipse at 50% 40%, rgba(255,230,150,.35) 0%, rgba(10,5,0,.0) 60%)',
+          animation: darkTransition==='todark' ? 'candleBlow .42s ease-out forwards' : 'candleLight .42s ease-out forwards',
+        }}/>
+      )}
 
       {/* Intro overlay — candle-light curtain */}
       {introPhase !== 'done' && (
@@ -627,6 +652,14 @@ export default function BookPortfolio() {
                     <p className="book-p" style={{fontStyle:'italic',fontFamily:'var(--fell)',fontSize:'.94rem',textAlign:'center',color:'var(--ink3)',borderLeft:'3px solid rgba(181,137,15,.35)',paddingLeft:'1rem',marginLeft:'.5rem',lineHeight:'1.8'}}>
                       &ldquo;A versatile professional whose experience is matched only by his dedication to excellence in every endeavour.&rdquo;
                     </p>
+                    {visitCount > 1 && (
+                      <div style={{display:'flex',alignItems:'center',gap:'.5rem',marginTop:'.8rem',padding:'.4rem .7rem',border:'1px solid rgba(181,137,15,.18)',background:'rgba(181,137,15,.04)',width:'fit-content'}}>
+                        <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--gold)',boxShadow:'0 0 6px rgba(212,168,32,.6)',flexShrink:0,animation:'otwPulse 2s ease-in-out infinite'}}/>
+                        <span style={{fontFamily:'var(--display)',fontSize:'.38rem',letterSpacing:'.15em',textTransform:'uppercase',color:'var(--ink3)'}}>
+                          This tome has been opened <strong style={{color:'var(--gold)',fontFamily:'var(--display)'}}>{visitCount.toLocaleString()}</strong> {visitCount===1?'time':'times'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="profile-portrait">
                     <img src="/irvan.jpg" alt="Muhamad Irpan Yasin" onError={e => e.target.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=260&fit=crop&q=80&grayscale'} />
@@ -649,27 +682,40 @@ export default function BookPortfolio() {
                 </div>
                 <p className="book-p dropcap">Herein are recorded the principal achievements and key undertakings of the author&apos;s career — selected works that demonstrate mastery across multiple domains, from the sciences of commerce and finance to the analytical arts.</p>
                 <div className="sec-break">✦ · · · ✦</div>
-                {[
-                  {num:'§ I',  tag:'Data Analysis',        title:'Sales Analytics Dashboard',    desc:'Developed a comprehensive sales tracking system using WordPress, enabling real-time monitoring of team performance and revenue trends across multiple territories.',      tech:['WordPress','Data Analysis','Reporting'],       links:[{href:'/sales-dashboard.html',label:'→ View Live Dashboard',ext:true}]},
-                  {num:'§ II', tag:'Tax Management',        title:'Tax Performance & Compliance', desc:'Managing VAT, income tax, and multi-branch reporting across corporate entities with data-driven accuracy — ensuring full regulatory compliance at all times.',              tech:['Tax Reporting','Compliance','Reconciliation'],  links:[{href:'/tax-dashboard.html',label:'→ View Live Dashboard',ext:true}]},
-                  {num:'§ III',tag:'Sales Leadership',      title:'Sales Team Development',       desc:'Successfully supervised and trained multiple sales teams, consistently achieving and exceeding quarterly targets through effective coaching and strategic planning.',         tech:['Team Training','Sales Strategy','Performance'],  links:[],onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772679048/Team_Imoo_p6c38j.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685898/20190728_203730_bu8dwi.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772688847/IMG_20221021_160056_ivbghx.jpg'],galleryTitle:'Sales Team Development'},
-                  {num:'§ IV', tag:'Professional Development',title:'Credentials & Recognition', desc:'A distinguished portfolio of credentials — from Japanese and German language certificates to awards of excellence recognising outstanding contribution to commerce.',       tech:['Certifications','Awards','Achievement'],         links:[],onCerts:true},
-                  {num:'§ V',  tag:'Business Development',  title:'Partner Network Expansion',    desc:'Built and maintained strategic relationships with sales partners, expanding market reach and increasing revenue streams across regions through effective networking.',      tech:['Partnership','Networking','Growth'],             links:[],onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772687273/20241204_162834_isoiyr.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685891/IMG_20190920_193619_pwc6au.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685896/IMG20190806091605_ssinhd.jpg'],galleryTitle:'Partner Network'},
-                ].map((item, idx) => (
-                  <div key={item.title} className="porto-entry stagger-entry" style={{animationDelay:`${idx * 0.1}s`}}>
-                    <div className="porto-entry-header"><span className="porto-num">{item.num}</span><span className="porto-tag">{item.tag}</span></div>
-                    <div className="porto-title">{item.title}</div>
-                    <p className="porto-desc">{item.desc}</p>
-                    <div className="porto-tech">{item.tech.map(t => <span key={t} className="porto-pill">{t}</span>)}</div>
-                    {(item.links.length>0||item.onCerts||item.onGallery) && (
-                      <div className="porto-links">
-                        {item.links.map(l => <a key={l.label} className="porto-link" href={l.href} target={l.ext?'_blank':undefined} rel="noopener">{l.label}</a>)}
-                        {item.onCerts && <button className="porto-link" onClick={() => openLB([{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676080/JFT_BASIC_M_Irpan_Yasin_page-0001_crpcof.jpg',title:'Japanese Language',caption:'JFT Certificate'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676181/Zertifikat_B1_DLMF_page-0001_bhxsts.jpg',title:'German Language',caption:'Deutsch Zertifikat'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676073/FPUH3_M_Irpan_Yasin_Sertifikat_1_page-0001_hnvkjs.jpg',title:'Hilal Leadership Community',caption:'Excellence Recognition'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676065/FPUH3_M_Irpan_Yasin_Sertifikat_1_page-0002_k7wyr8.jpg',title:'Hilal Leadership Community',caption:'Excellence Recognition'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676174/Mindluster_Certificate_Ms_Excel_page-0001_zd5ccz.jpg',title:'Certificate Excel',caption:'Advanced Excel'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676077/Auszeichnungsplakette_page-0001_uyed4g.jpg',title:'Award',caption:'Best Employee'}],'Credentials')}>→ View Certificates</button>}
-                        {item.onGallery && <button className="porto-link" onClick={() => openLB(item.galleryImgs,item.galleryTitle)}>→ View Gallery</button>}
+
+                {/* Animated Career Timeline */}
+                <div className="career-timeline">
+                  {[
+                    {num:'§ I',  year:'2024', tag:'Data Analysis',         title:'Sales Analytics Dashboard',    desc:'Developed a comprehensive sales tracking system using WordPress, enabling real-time monitoring of team performance and revenue trends across multiple territories.',      tech:['WordPress','Data Analysis','Reporting'],       links:[{href:'/sales-dashboard.html',label:'→ View Dashboard',ext:true}], side:'left'},
+                    {num:'§ II', year:'2023', tag:'Tax Management',         title:'Tax Performance & Compliance', desc:'Managing VAT, income tax, and multi-branch reporting across corporate entities with data-driven accuracy — ensuring full regulatory compliance at all times.',              tech:['Tax Reporting','Compliance','Reconciliation'],  links:[{href:'/tax-dashboard.html',label:'→ View Dashboard',ext:true}], side:'right', onGallery:false},
+                    {num:'§ III',year:'2022', tag:'Sales Leadership',       title:'Sales Team Development',       desc:'Successfully supervised and trained multiple sales teams, consistently achieving and exceeding quarterly targets through effective coaching and strategic planning.',         tech:['Team Training','Sales Strategy','Performance'],  links:[], side:'left', onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772679048/Team_Imoo_p6c38j.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685898/20190728_203730_bu8dwi.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772688847/IMG_20221021_160056_ivbghx.jpg'],galleryTitle:'Sales Team'},
+                    {num:'§ IV', year:'2020', tag:'Professional Development',title:'Credentials & Recognition',  desc:'A distinguished portfolio of credentials — from Japanese and German language certificates to awards of excellence recognising outstanding contribution to commerce.',       tech:['Certifications','Awards','Achievement'],         links:[], side:'right', onCerts:true},
+                    {num:'§ V',  year:'2019', tag:'Business Development',   title:'Partner Network Expansion',    desc:'Built and maintained strategic relationships with sales partners, expanding market reach and increasing revenue streams across regions through effective networking.',      tech:['Partnership','Networking','Growth'],             links:[], side:'left', onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772687273/20241204_162834_isoiyr.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685891/IMG_20190920_193619_pwc6au.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685896/IMG20190806091605_ssinhd.jpg'],galleryTitle:'Partner Network'},
+                  ].map((item, idx) => (
+                    <div key={item.title} className={`tl-entry tl-${item.side} stagger-entry`} style={{animationDelay:`${idx*0.12}s`}}>
+                      <div className="tl-year-badge">{item.year}</div>
+                      <div className="tl-node"/>
+                      <div className="tl-card">
+                        <div className="tl-card-header">
+                          <span className="porto-num">{item.num}</span>
+                          <span className="porto-tag">{item.tag}</span>
+                        </div>
+                        <div className="porto-title">{item.title}</div>
+                        <p className="porto-desc">{item.desc}</p>
+                        <div className="porto-tech">{item.tech.map(t => <span key={t} className="porto-pill">{t}</span>)}</div>
+                        {(item.links?.length>0||item.onCerts||item.onGallery) && (
+                          <div className="porto-links">
+                            {item.links?.map(l => <a key={l.label} className="porto-link" href={l.href} target={l.ext?'_blank':undefined} rel="noopener">{l.label}</a>)}
+                            {item.onCerts && <button className="porto-link" onClick={() => openLB([{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676080/JFT_BASIC_M_Irpan_Yasin_page-0001_crpcof.jpg',title:'Japanese Language',caption:'JFT Certificate'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676181/Zertifikat_B1_DLMF_page-0001_bhxsts.jpg',title:'German Language',caption:'Deutsch Zertifikat'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676073/FPUH3_M_Irpan_Yasin_Sertifikat_1_page-0001_hnvkjs.jpg',title:'Hilal Leadership Community',caption:'Excellence Recognition'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676065/FPUH3_M_Irpan_Yasin_Sertifikat_1_page-0002_k7wyr8.jpg',title:'Hilal Leadership',caption:'Excellence Recognition'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676174/Mindluster_Certificate_Ms_Excel_page-0001_zd5ccz.jpg',title:'Certificate Excel',caption:'Advanced Excel'},{src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772676077/Auszeichnungsplakette_page-0001_uyed4g.jpg',title:'Award',caption:'Best Employee'}],'Credentials')}>→ View Certificates</button>}
+                            {item.onGallery && <button className="porto-link" onClick={() => openLB(item.galleryImgs,item.galleryTitle)}>→ View Gallery</button>}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                  {/* Timeline spine line */}
+                  <div className="tl-spine"/>
+                </div>
                 <div className="page-num-right">{pageNums.r}</div>
               </div>
 
@@ -889,11 +935,6 @@ export default function BookPortfolio() {
                 <p className="book-p" style={{fontFamily:'var(--fell)',fontStyle:'italic',textAlign:'center',fontSize:'.85rem',color:'var(--ink3)'}}>
                   © 2026 Muhamad Irpan Yasin — All Rights Reserved
                 </p>
-                {visitCount && (
-                  <p style={{fontFamily:'var(--display)',fontSize:'.42rem',letterSpacing:'.15em',textTransform:'uppercase',color:'var(--ink3)',textAlign:'center',marginTop:'.6rem',opacity:.6}}>
-                    This tome has been opened {visitCount.toLocaleString()} {visitCount===1?'time':'times'}
-                  </p>
-                )}
                 <div className="page-num-right">{pageNums.r}</div>
               </div>
 
@@ -980,7 +1021,11 @@ export default function BookPortfolio() {
             </svg>
             {soundOn ? 'Sound On' : 'Sound Off'}
           </button>
-          <button onClick={() => setDarkMode(d=>!d)} className={`toolbar-btn${darkMode?' active':''}`}>
+          <button onClick={() => {
+            const goingDark = !darkMode
+            setDarkTransition(goingDark ? 'todark' : 'tolight')
+            setTimeout(() => { setDarkMode(goingDark); setDarkTransition(null) }, 420)
+          }} className={`toolbar-btn${darkMode?' active':''}`}>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               {darkMode
                 ? <path d="M8 3V1m0 14v-2m5-5h2M1 8h2m7.07-4.07 1.42-1.42M4.51 11.49l-1.42 1.42m0-8.49L4.51 4.51m7.07 7.07-1.42-1.42M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
