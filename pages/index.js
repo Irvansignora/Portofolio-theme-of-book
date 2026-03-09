@@ -97,15 +97,16 @@ export default function BookPortfolio() {
   const [toolbarOpen, setToolbarOpen]     = useState(false)
   const [konamiActive, setKonamiActive]   = useState(false)
 
-  // Konami code: ↑↑↓↓←→←→BA → triggers gold mode easter egg
+  // Konami code: ↑↑↓↓←→←→BA
   const konamiSeq = useRef([])
-  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a']
-
   useEffect(() => {
+    const KONAMI = 'ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a'
     const onKey = (e) => {
-      konamiSeq.current = [...konamiSeq.current, e.key].slice(-10)
-      if (konamiSeq.current.join(',') === KONAMI.join(',')) {
+      const k = e.key === 'B' ? 'b' : e.key === 'A' ? 'a' : e.key
+      konamiSeq.current = [...konamiSeq.current, k].slice(-10)
+      if (konamiSeq.current.join(',') === KONAMI) {
         setKonamiActive(true)
+        konamiSeq.current = []
         setTimeout(() => setKonamiActive(false), 4000)
       }
     }
@@ -444,6 +445,8 @@ export default function BookPortfolio() {
           .intro-opening #book { animation: bookOpen .9s cubic-bezier(.16,1,.3,1) .15s both; }
           @keyframes bookOpen { from{opacity:0;transform:rotateX(8deg) scale(.92)} to{opacity:1;transform:rotateX(2deg) scale(1)} }
           .intro-done #book { opacity:1; transform:rotateX(2deg); }
+          @keyframes konamiReveal { from{opacity:0} to{opacity:1} }
+          @keyframes konamiText { from{opacity:0;transform:translateY(20px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
         `}</style>
       </Head>
 
@@ -602,12 +605,13 @@ export default function BookPortfolio() {
                     <div className="book-h3">Languages of Correspondence</div>
                     <div className="lang-row">
                       {[
-                        {code:'ID', lang:'Indonesian', lvl:'Native',      script:'Bahasa Indonesia'},
-                        {code:'EN', lang:'English',    lvl:'Elementary',  script:'English'},
-                        {code:'DE', lang:'German',     lvl:'Elementary',  script:'Deutsch'},
-                        {code:'JP', lang:'Japanese',   lvl:'Elementary',  script:'日本語'},
-                      ].map(({code,lang,lvl,script}) => (
-                        <div key={code} className="lang-pill" title={script}>
+                        {code:'ID', flag:'id', lang:'Indonesian', lvl:'Native'},
+                        {code:'EN', flag:'gb', lang:'English',    lvl:'Elementary'},
+                        {code:'DE', flag:'de', lang:'German',     lvl:'Elementary'},
+                        {code:'JP', flag:'jp', lang:'Japanese',   lvl:'Elementary'},
+                      ].map(({code,flag,lang,lvl}) => (
+                        <div key={code} className="lang-pill">
+                          <img src={`https://flagcdn.com/w40/${flag}.png`} alt={lang} width="24" height="16" style={{objectFit:'cover',border:'1px solid rgba(139,105,20,.3)',flexShrink:0}} />
                           <span className="lang-code">{code}</span>
                           <span>{lang}</span>
                           <span className="lv">— {lvl}</span>
@@ -1069,19 +1073,25 @@ export default function BookPortfolio() {
           position:'fixed', inset:0, zIndex:99990,
           display:'flex', alignItems:'center', justifyContent:'center',
           pointerEvents:'none', flexDirection:'column', gap:'1rem',
-          animation:'lbFadeIn .3s ease forwards',
+          background:'rgba(5,2,0,.75)',
+          animation:'konamiReveal .35s cubic-bezier(.16,1,.3,1) both',
         }}>
           <div style={{
             fontFamily:'var(--fraktur)', fontSize:'clamp(2.5rem,8vw,5rem)',
             color:'var(--gold2)', textAlign:'center', lineHeight:1.2,
-            textShadow:'0 0 30px rgba(212,168,32,.8), 0 0 60px rgba(212,168,32,.4)',
-            animation:'quoteFlash .4s ease both',
+            textShadow:'0 0 40px rgba(212,168,32,.9), 0 0 80px rgba(212,168,32,.5)',
+            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .1s both',
           }}>✦ Cheat Code Activated ✦</div>
           <div style={{
             fontFamily:'var(--display)', fontSize:'.5rem', letterSpacing:'.3em',
-            color:'rgba(212,168,32,.6)', textTransform:'uppercase',
-            animation:'quoteFlash .4s ease .1s both',
+            color:'rgba(212,168,32,.65)', textTransform:'uppercase',
+            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .2s both',
           }}>You have discovered the ancient manuscript</div>
+          <div style={{
+            fontFamily:'var(--fell)', fontSize:'1rem', fontStyle:'italic',
+            color:'rgba(244,234,213,.45)', marginTop:'.5rem',
+            animation:'konamiText .5s cubic-bezier(.16,1,.3,1) .3s both',
+          }}>↑ ↑ ↓ ↓ ← → ← → B A</div>
         </div>
       )}
     </>
