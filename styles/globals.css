@@ -892,13 +892,199 @@ body { font-family: var(--serif); cursor: default; }
 #book-scene.dark-mode .travel-dest { color: rgba(210,185,140,.75); }
 #book-scene.dark-mode .travel-year { color: rgba(139,105,20,.5); }
 
-/* Mobile travel grid */
-@media (max-width: 700px) {
-  .travel-grid { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
-  .travel-card-0, .travel-card-1, .travel-card-2 { transform: none; }
+/* ===== CUSTOM CURSOR (quill pen) ===== */
+@media (pointer: fine) {
+  body { cursor: none; }
+
+  .cursor-dot {
+    position: fixed; top: 0; left: 0;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold2);
+    pointer-events: none; z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: transform .1s, opacity .2s, background .2s;
+    box-shadow: 0 0 6px rgba(212,168,32,.6);
+  }
+  .cursor-ring {
+    position: fixed; top: 0; left: 0;
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(181,137,15,.5);
+    pointer-events: none; z-index: 99998;
+    transform: translate(-50%, -50%);
+    transition: transform .18s cubic-bezier(.16,1,.3,1), width .2s, height .2s, opacity .2s;
+  }
+  .cursor-dot.hovering  { transform: translate(-50%,-50%) scale(2.5); background: var(--red); }
+  .cursor-ring.hovering { width: 44px; height: 44px; border-color: rgba(155,28,28,.5); }
 }
 
-/* ===== PRINT / PDF ===== */
+/* ===== MOBILE RESPONSIVE — Full Overhaul ===== */
+@media (max-width: 700px) {
+  html, body { overflow: auto; }
+
+  /* Kill 3D perspective on mobile — it causes layout bugs */
+  #book-scene {
+    height: auto; min-height: 100vh;
+    align-items: flex-start;
+    padding-top: 0;
+    perspective: none;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(80,40,10,.4) 0%, transparent 60%),
+      radial-gradient(ellipse at center, #1e1005 0%, #0a0602 100%);
+  }
+
+  /* Hide atmospheric candles on mobile */
+  .scene-candle, .scene-vignette { display: none; }
+
+  /* Intro curtain — simpler on mobile */
+  .intro-monogram { font-size: clamp(4rem, 20vw, 6rem); }
+  .intro-title    { font-size: .6rem; letter-spacing: .3em; }
+
+  /* Book becomes single-column scroll */
+  #book {
+    flex-direction: column;
+    width: 100vw; height: auto;
+    transform: none !important;
+    box-shadow: none;
+    min-height: 100vh;
+  }
+  .intro-opening #book, .intro-done #book { transform: none !important; }
+
+  #spine { display: none; }
+  #page-left { display: none; } /* replaced by hamburger drawer */
+
+  /* Right page = full screen on mobile */
+  #page-right {
+    flex: none; width: 100%;
+    overflow: visible;
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%);
+  }
+  #page-right::after { display: none; }
+
+  /* Content padding — comfortable thumb reach */
+  .right-inner {
+    height: auto; overflow: visible;
+    padding: 3.5rem 1.2rem 5rem;
+  }
+
+  /* Chapter ribbon on mobile */
+  .chapter-ribbon-wrap { height: 16px; }
+  .chapter-ribbon-label { display: none; }
+
+  /* ---- TYPOGRAPHY SCALE ---- */
+  .ch-heading-title { font-size: 1.5rem; }
+  .ch-heading-num   { font-size: .5rem; letter-spacing: .25em; }
+  .book-p           { font-size: .95rem; line-height: 1.85; }
+  .dropcap::first-letter { font-size: 4rem; }
+
+  /* ---- HOME PAGE ---- */
+  /* Stack portrait above bio on mobile */
+  .home-spread {
+    display: flex; flex-direction: column-reverse; gap: 1.4rem;
+  }
+  .profile-portrait {
+    display: flex; flex-direction: row;
+    align-items: center; gap: 1.2rem;
+    text-align: left; position: static;
+    background: rgba(181,137,15,.05);
+    border: 1px solid rgba(181,137,15,.18);
+    padding: .8rem;
+  }
+  .profile-portrait img {
+    width: 80px; height: 106px;
+    flex-shrink: 0; margin: 0;
+    box-shadow: 3px 5px 16px rgba(0,0,0,.35);
+  }
+  .portrait-caption { font-size: .8rem; }
+  .portrait-socials { justify-content: flex-start; margin-top: .5rem; }
+
+  /* Stats row — wrap to 2x2 on small screens */
+  .stats-row { gap: .6rem; flex-wrap: wrap; }
+  .stat-box  { min-width: calc(50% - .3rem); padding: .6rem .3rem; }
+  .sn        { font-size: 1.4rem; }
+  .sl        { font-size: .4rem; }
+
+  /* Languages — wrap naturally */
+  .lang-row  { gap: .4rem; }
+  .lang-pill { font-size: .76rem; padding: .28rem .5rem; }
+
+  /* ---- PORTFOLIO / PROJECTS ---- */
+  .porto-entry { padding: .7rem 0 .7rem .9rem; margin-bottom: .9rem; }
+  .porto-title { font-size: .98rem; }
+  .porto-desc  { font-size: .85rem; }
+  .porto-tech  { gap: .25rem; }
+  .porto-pill  { font-size: .37rem; }
+
+  /* ---- SKILLS ---- */
+  .skill-legend { flex-wrap: wrap; gap: .4rem; }
+  .skill-legend-item { font-size: .38rem; }
+  .skill-entry-title { font-size: .9rem; }
+
+  /* ---- SOCIAL ---- */
+  .social-entry { flex-direction: column; gap: .6rem; }
+  .social-photo-strip {
+    flex-wrap: nowrap; overflow-x: auto;
+    padding-bottom: .4rem; gap: .5rem;
+    /* smooth momentum scroll on iOS */
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+  .social-photo-frame {
+    flex-shrink: 0; transform: none !important;
+    scroll-snap-align: start;
+  }
+  .social-photo-frame:nth-child(1),
+  .social-photo-frame:nth-child(2),
+  .social-photo-frame:nth-child(3) { transform: none; }
+
+  /* ---- TRAVEL ---- */
+  .travel-grid {
+    grid-template-columns: repeat(2, 1fr); gap: .6rem;
+  }
+  .travel-card-0, .travel-card-1, .travel-card-2 { transform: none; }
+  .travel-dest { font-size: .62rem; }
+
+  /* ---- CONTACT ---- */
+  .contact-box    { padding: .8rem; }
+  .contact-row    { flex-direction: column; gap: .15rem; }
+  .social-quick-links { gap: .4rem; flex-wrap: wrap; }
+  .sql-btn        { font-size: .44rem; padding: .45rem .8rem; }
+  .qinput, .qtextarea { font-size: .85rem; }
+
+  /* ---- HAMBURGER & TOOLBAR ---- */
+  .mobile-hamburger { display: flex; }
+  .toolbar-btn      { display: none; }
+
+  /* ---- SCROLL INDICATOR ---- */
+  /* Move scroll hint from right to bottom center on mobile */
+  .scroll-hint-mobile { bottom: 1.5rem !important; right: 50% !important; transform: translateX(50%); }
+
+  /* ---- WAX SEAL ---- */
+  .wax-seal-circle { width: 44px; height: 44px; font-size: 1.2rem; }
+}
+
+/* Extra-small phones */
+@media (max-width: 380px) {
+  .stats-row  { gap: .4rem; }
+  .stat-box   { min-width: calc(50% - .2rem); }
+  .lang-pill  { font-size: .7rem; }
+  .porto-pill { font-size: .35rem; }
+  .right-inner { padding: 3.2rem 1rem 4rem; }
+  .ch-heading-title { font-size: 1.3rem; }
+}
+
+/* Tablet — keep book layout but adjust sizing */
+@media (min-width: 701px) and (max-width: 960px) {
+  #book {
+    width: 98vw;
+    height: min(680px, 94vh);
+  }
+  #page-left { width: 220px; }
+  .right-inner { padding: 2.4rem 1.8rem 2rem 2rem; }
+  .ch-heading-title { font-size: 1.6rem; }
+  .home-spread { grid-template-columns: 1fr 150px; }
+  .profile-portrait img { width: 140px; height: 186px; }
+}
 @media print {
   body { background: #fff !important; overflow: auto !important; }
   #book-scene { background: #fff !important; perspective: none !important; width: 100% !important; height: auto !important; display: block !important; }
@@ -911,52 +1097,4 @@ body { font-family: var(--serif); cursor: default; }
   .flip-leaf, #lb, .mobile-hamburger, .mobile-overlay, .toolbar-btn { display: none !important; }
   .porto-entry, .skill-entry, .social-entry { break-inside: avoid; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-}
-
-/* ===== MOBILE RESPONSIVE ===== */
-@media (max-width: 700px) {
-  html, body { overflow: auto; }
-
-  #book-scene { height: auto; min-height: 100vh; align-items: flex-start; padding-top: 60px; }
-  #book { flex-direction: column; width: 100vw; height: auto; transform: none; box-shadow: none; }
-  #spine { display: none; }
-
-  /* Hide left page on mobile — use hamburger menu instead */
-  #page-left { display: none; }
-
-  #page-right { flex: none; width: 100%; overflow: visible; min-height: calc(100vh - 60px); }
-  #page-right::after { display: none; }
-  .right-inner { height: auto; overflow: visible; padding: 1.5rem 1.2rem 2rem; }
-
-  .home-spread { grid-template-columns: 1fr; gap: 1rem; }
-  .profile-portrait { display: flex; flex-direction: row; align-items: center; gap: 1rem; text-align: left; position: static; }
-  .profile-portrait img { width: 90px; height: 120px; margin: 0; flex-shrink: 0; }
-  .portrait-caption { font-size: .82rem; }
-  .portrait-socials { justify-content: flex-start; margin-top: .4rem; }
-
-  .stats-row { gap: .5rem; }
-  .stat-box { padding: .4rem .3rem; }
-  .sn { font-size: 1.2rem; }
-
-  .porto-entry { padding: .6rem 0 .6rem .8rem; }
-  .social-entry { flex-direction: column; }
-  .social-photo-strip { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; }
-  .social-photo-frame { flex-shrink: 0; }
-  .social-photo-frame:nth-child(1),
-  .social-photo-frame:nth-child(2),
-  .social-photo-frame:nth-child(3) { transform: none; }
-
-  .ch-heading-title { font-size: 1.4rem; }
-  .mobile-hamburger { display: flex; }
-  .skill-legend { flex-wrap: wrap; gap: .4rem; }
-  .sql-btn { font-size: .42rem; padding: .4rem .7rem; }
-  .social-quick-links { gap: .4rem; }
-  .toolbar-btn { display: none; } /* hide on mobile — space constrained */
-}
-
-@media (max-width: 480px) {
-  .stats-row { flex-wrap: wrap; }
-  .stat-box { min-width: 80px; }
-  .lang-pill { font-size: .72rem; }
-  .porto-pill { font-size: .36rem; }
 }
