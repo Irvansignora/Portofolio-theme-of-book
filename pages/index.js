@@ -94,6 +94,24 @@ export default function BookPortfolio() {
   const [previewUrl, setPreviewUrl]       = useState(null)
   const [previewPos, setPreviewPos]       = useState({ x: 0, y: 0 })
   const [introPhase, setIntroPhase]       = useState('closed') // 'closed' | 'opening' | 'done'
+  const [toolbarOpen, setToolbarOpen]     = useState(false)
+  const [konamiActive, setKonamiActive]   = useState(false)
+
+  // Konami code: ↑↑↓↓←→←→BA → triggers gold mode easter egg
+  const konamiSeq = useRef([])
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a']
+
+  useEffect(() => {
+    const onKey = (e) => {
+      konamiSeq.current = [...konamiSeq.current, e.key].slice(-10)
+      if (konamiSeq.current.join(',') === KONAMI.join(',')) {
+        setKonamiActive(true)
+        setTimeout(() => setKonamiActive(false), 4000)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const rightScrollRef = useRef(null)
   const leafRef        = useRef(null)
@@ -237,7 +255,7 @@ export default function BookPortfolio() {
     resize()
     window.addEventListener('resize', resize)
 
-    // Init particles
+    // Init ambient dust particles
     const COUNT = 55
     particlesRef.current = Array.from({ length: COUNT }, () => ({
       x:     Math.random() * window.innerWidth,
@@ -245,12 +263,49 @@ export default function BookPortfolio() {
       r:     Math.random() * 1.4 + 0.3,
       vx:    (Math.random() - 0.5) * 0.18,
       vy:    -(Math.random() * 0.25 + 0.08),
-      alpha: Math.random() * 0.45 + 0.05,
+      alpha: Math.random() * 0.35 + 0.05,
       life:  Math.random(),
     }))
 
+    // Ink drop trail from cursor
+    const inkDrops = []
+    let lastMx = 0, lastMy = 0
+    const spawnInk = (e) => {
+      const dx = e.clientX - lastMx, dy = e.clientY - lastMy
+      if (Math.hypot(dx,dy) < 14) return
+      lastMx = e.clientX; lastMy = e.clientY
+      if (inkDrops.length > 24) inkDrops.shift()
+      inkDrops.push({
+        x: e.clientX, y: e.clientY,
+        r: Math.random() * 2.2 + 0.8,
+        alpha: Math.random() * 0.4 + 0.15,
+        life: 0,
+        decay: Math.random() * 0.016 + 0.01,
+        vx: (Math.random()-.5)*0.35,
+        vy: Math.random()*0.5 + 0.15,
+      })
+    }
+    window.addEventListener('mousemove', spawnInk)
+
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Ink drops — fall with gravity, fade out
+      for (let i = inkDrops.length - 1; i >= 0; i--) {
+        const d = inkDrops[i]
+        d.life += d.decay
+        d.x += d.vx
+        d.y += d.vy
+        d.vy += 0.035
+        const fade = Math.max(0, 1 - d.life)
+        ctx.beginPath()
+        ctx.ellipse(d.x, d.y, d.r * (1 + d.life*.4), d.r, 0, 0, Math.PI*2)
+        ctx.fillStyle = `rgba(181,120,15,${d.alpha * fade * .6})`
+        ctx.fill()
+        if (d.life >= 1) inkDrops.splice(i, 1)
+      }
+
+      // Ambient dust
       particlesRef.current.forEach(p => {
         p.x    += p.vx
         p.y    += p.vy
@@ -259,7 +314,7 @@ export default function BookPortfolio() {
           p.x    = Math.random() * canvas.width
           p.y    = canvas.height + 5
           p.life = 0
-          p.alpha = Math.random() * 0.45 + 0.05
+          p.alpha = Math.random() * 0.35 + 0.05
         }
         const fade = Math.sin(p.life * Math.PI)
         ctx.beginPath()
@@ -273,6 +328,7 @@ export default function BookPortfolio() {
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', spawnInk)
     }
   }, [])
 
@@ -391,7 +447,12 @@ export default function BookPortfolio() {
         `}</style>
       </Head>
 
-      <div id="book-scene" className={[darkMode ? 'dark-mode' : '', `intro-${introPhase}`, introPhase === 'opening' ? 'intro-opening' : ''].filter(Boolean).join(' ')}>
+      <div id="book-scene" className={[
+        darkMode ? 'dark-mode' : '',
+        `intro-${introPhase}`,
+        introPhase === 'opening' ? 'intro-opening' : '',
+        konamiActive ? 'konami-mode' : '',
+      ].filter(Boolean).join(' ')}>
 
       {/* Intro overlay — candle-light curtain */}
       {introPhase !== 'done' && (
@@ -437,7 +498,31 @@ export default function BookPortfolio() {
 
         <div id="book">
 
-          <div id="spine" />
+          {/* SPINE — dengan chapter indicator marker bergerak */}
+          <div id="spine">
+            {[
+              {id:'home',      pct: 7  },
+              {id:'portfolio', pct: 21 },
+              {id:'projects',  pct: 35 },
+              {id:'skills',    pct: 50 },
+              {id:'social',    pct: 64 },
+              {id:'travel',    pct: 78 },
+              {id:'contact',   pct: 92 },
+            ].map(ch => (
+              <div
+                key={ch.id}
+                className={`spine-tick${current===ch.id?' active-tick':''}`}
+                style={{top:`${ch.pct}%`}}
+              />
+            ))}
+            <div
+              className="spine-marker"
+              style={{top:`${[
+                {id:'home',pct:7},{id:'portfolio',pct:21},{id:'projects',pct:35},
+                {id:'skills',pct:50},{id:'social',pct:64},{id:'travel',pct:78},{id:'contact',pct:92}
+              ].find(c=>c.id===current)?.pct ?? 7}%`}}
+            />
+          </div>
 
           {/* LEFT PAGE */}
           <div id="page-left">
@@ -516,10 +601,16 @@ export default function BookPortfolio() {
                     </div>
                     <div className="book-h3">Languages of Correspondence</div>
                     <div className="lang-row">
-                      {[['id','Indonesian','Native'],['gb','English','Elementary'],['de','German','Elementary'],['jp','Japanese','Elementary']].map(([flag,lang,lvl]) => (
-                        <div key={flag} className="lang-pill">
-                          <img src={`https://flagcdn.com/w80/${flag}.png`} alt={lang} />
-                          <span>{lang}</span><span className="lv">— {lvl}</span>
+                      {[
+                        {code:'ID', lang:'Indonesian', lvl:'Native',      script:'Bahasa Indonesia'},
+                        {code:'EN', lang:'English',    lvl:'Elementary',  script:'English'},
+                        {code:'DE', lang:'German',     lvl:'Elementary',  script:'Deutsch'},
+                        {code:'JP', lang:'Japanese',   lvl:'Elementary',  script:'日本語'},
+                      ].map(({code,lang,lvl,script}) => (
+                        <div key={code} className="lang-pill" title={script}>
+                          <span className="lang-code">{code}</span>
+                          <span>{lang}</span>
+                          <span className="lv">— {lvl}</span>
                         </div>
                       ))}
                     </div>
@@ -829,68 +920,168 @@ export default function BookPortfolio() {
         <span/><span/><span/>
       </button>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — quill pen style */}
       {current!=='home' && scrollPct<95 && (
-        <div style={{position:'fixed',bottom:'2.2rem',right:'2.5rem',zIndex:50,pointerEvents:'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'.2rem',opacity:scrollPct>80?0:0.55,transition:'opacity .6s',animation:'quillBob 2.2s ease-in-out infinite'}}>
-          <span style={{fontFamily:'var(--fell)',fontSize:'.62rem',color:'var(--gold)',fontStyle:'italic',letterSpacing:'.06em'}}>scroll</span>
-          <span style={{color:'var(--gold)',fontSize:'.9rem',lineHeight:1}}>↓</span>
+        <div style={{
+          position:'fixed', bottom:'2.2rem', right:'2.5rem', zIndex:50,
+          pointerEvents:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:'.3rem',
+          opacity: scrollPct>80 ? 0 : 0.6, transition:'opacity .6s',
+        }}>
+          <span style={{
+            fontFamily:'var(--display)', fontSize:'.38rem', color:'var(--gold)',
+            letterSpacing:'.2em', textTransform:'uppercase',
+            writingMode:'vertical-rl', letterSpacing:'.25em',
+            animation:'quillBob 2.2s ease-in-out infinite',
+          }}>scroll</span>
+          <svg width="12" height="24" viewBox="0 0 12 24" fill="none" style={{animation:'quillBob 2.2s ease-in-out infinite .3s'}}>
+            <line x1="6" y1="0" x2="6" y2="20" stroke="rgba(181,137,15,.6)" strokeWidth="1"/>
+            <polyline points="2,16 6,22 10,16" fill="none" stroke="rgba(181,137,15,.6)" strokeWidth="1.2"/>
+          </svg>
         </div>
       )}
 
-      {/* Bookmark */}
-      <div style={{position:'fixed',top:0,right:'calc(50% - min(550px,48vw) + 10px)',width:'18px',height:`${28+scrollPct*0.55}px`,background:'linear-gradient(180deg,var(--red) 0%,#5a0f0f 100%)',zIndex:30,pointerEvents:'none',boxShadow:'1px 0 6px rgba(0,0,0,.3)',transition:'height .3s cubic-bezier(.16,1,.3,1)',clipPath:'polygon(0 0,100% 0,100% calc(100% - 7px),50% 100%,0 calc(100% - 7px))'}}>
-        <div style={{position:'absolute',top:'6px',left:'50%',transform:'translateX(-50%)',color:'rgba(244,234,213,.55)',fontSize:'.55rem',writingMode:'vertical-rl',fontFamily:'var(--display)',letterSpacing:'.15em',userSelect:'none'}}>✦</div>
+      {/* Bookmark — grows with scroll progress, shows chapter number */}
+      <div style={{
+        position:'fixed', top:0,
+        right:'calc(50% - min(550px,48vw) + 10px)',
+        width:'20px',
+        height:`${32+scrollPct*0.58}px`,
+        background:'linear-gradient(180deg,#8b1a1a 0%,#5a0f0f 100%)',
+        zIndex:30, pointerEvents:'none',
+        boxShadow:'1px 0 8px rgba(0,0,0,.4), inset -1px 0 0 rgba(255,150,100,.1)',
+        transition:'height .4s cubic-bezier(.16,1,.3,1)',
+        clipPath:'polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))',
+      }}>
+        <div style={{
+          position:'absolute', top:'8px', left:'50%', transform:'translateX(-50%)',
+          color:'rgba(244,234,213,.5)', fontSize:'.48rem',
+          writingMode:'vertical-rl', fontFamily:'var(--fraktur)',
+          letterSpacing:'.1em', userSelect:'none',
+        }}>
+          {['I','II','III','IV','V','VI','VII'][[
+            'home','portfolio','projects','skills','social','travel','contact'
+          ].indexOf(current)] ?? '✦'}
+        </div>
       </div>
 
-      {/* Toolbar */}
-      <div style={{position:'fixed',bottom:'1.8rem',left:'1.8rem',zIndex:50,display:'flex',gap:'.4rem',flexDirection:'column',alignItems:'flex-start'}}>
-        <button onClick={() => setSoundOn(s=>!s)} className={`toolbar-btn${soundOn?' active':''}`}>
-          <span style={{fontSize:'.8rem'}}>{soundOn?'🔔':'🔕'}</span>{soundOn?'Sound On':'Sound Off'}
+      {/* Toolbar — collapsible floating panel */}
+      <div className="toolbar-panel">
+        <div className={`toolbar-items${toolbarOpen?' open':''}`}>
+          <button onClick={() => setSoundOn(s=>!s)} className={`toolbar-btn${soundOn?' active':''}`}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {soundOn
+                ? <><path d="M1 5.5h3l4-3v11l-4-3H1z"/><path d="M11 4a5 5 0 0 1 0 8M13 2a8 8 0 0 1 0 12"/></>
+                : <><path d="M1 5.5h3l4-3v11l-4-3H1z"/><path d="M13 5l-4 4m0-4l4 4"/></>
+              }
+            </svg>
+            {soundOn ? 'Sound On' : 'Sound Off'}
+          </button>
+          <button onClick={() => setDarkMode(d=>!d)} className={`toolbar-btn${darkMode?' active':''}`}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {darkMode
+                ? <path d="M8 3V1m0 14v-2m5-5h2M1 8h2m7.07-4.07 1.42-1.42M4.51 11.49l-1.42 1.42m0-8.49L4.51 4.51m7.07 7.07-1.42-1.42M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                : <path d="M12 10.5A5 5 0 0 1 6.5 2a6 6 0 1 0 7.46 9.15c-.65.22-1.34.35-1.96.35z"/>
+              }
+            </svg>
+            {darkMode ? 'Night Ink' : 'Day Parchment'}
+          </button>
+          <a href="/cv.pdf" download="CV-Muhamad-Irpan-Yasin.pdf" className="toolbar-btn" style={{textDecoration:'none'}}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 1h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><path d="M9 1v4h3M8 7v5m-2-2 2 2 2-2"/>
+            </svg>
+            Get CV
+          </a>
+          <a href="https://www.linkedin.com/in/muhamad-irpan-yasin" target="_blank" rel="noopener" className="toolbar-btn" style={{textDecoration:'none'}}>
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path d="M13 1H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM5.5 12H4V6.5h1.5V12zM4.75 5.75a.875.875 0 1 1 0-1.75.875.875 0 0 1 0 1.75zM12 12h-1.5V9.2c0-.7-.56-1.2-1.25-1.2S8 8.5 8 9.2V12H6.5V6.5H8v.72A2.24 2.24 0 0 1 9.75 6.5C11.02 6.5 12 7.48 12 8.75V12z"/>
+            </svg>
+            LinkedIn
+          </a>
+        </div>
+        <button
+          className={`toolbar-toggle${toolbarOpen?' open':''}`}
+          onClick={() => setToolbarOpen(o=>!o)}
+          aria-label="Toggle toolbar"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M8 2v12M2 8h12" strokeLinecap="round"/>
+          </svg>
         </button>
-        <button onClick={() => setDarkMode(d=>!d)} className={`toolbar-btn${darkMode?' active':''}`}>
-          <span style={{fontSize:'.8rem'}}>{darkMode?'🌙':'☀️'}</span>{darkMode?'Night Ink':'Day Parchment'}
-        </button>
-        <a href="/cv.pdf" download="CV-Muhamad-Irpan-Yasin.pdf" className="toolbar-btn" style={{textDecoration:'none'}}>
-          <span style={{fontSize:'.8rem'}}>📄</span>Get CV
-        </a>
-        <a href="https://www.linkedin.com/in/muhamad-irpan-yasin" target="_blank" rel="noopener" className="toolbar-btn" style={{textDecoration:'none'}}>
-          <span style={{fontSize:'.8rem'}}>💼</span>LinkedIn
-        </a>
       </div>
 
-      {/* Flip quote */}
+      {/* Flip quote — ornamental manuscript style */}
       {showQuote && (
-        <div style={{position:'fixed',inset:0,zIndex:45,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
-          <p style={{fontFamily:'var(--fell)',fontStyle:'italic',fontSize:'clamp(.9rem,2vw,1.1rem)',color:'rgba(244,234,213,.82)',textAlign:'center',maxWidth:'340px',letterSpacing:'.02em',lineHeight:1.6,textShadow:'0 2px 16px rgba(0,0,0,.8)',animation:'quoteFlash .9s ease forwards'}}>{flipQuote}</p>
+        <div className="flip-quote-wrap">
+          <div className="flip-quote-inner">
+            <div className="flip-quote-ornament">✦ · · · ✦</div>
+            <p className="flip-quote-text">{flipQuote}</p>
+            <div className="flip-quote-ornament">✦ · · · ✦</div>
+          </div>
         </div>
       )}
 
-      {/* Lightbox */}
+      {/* Lightbox — premium ornamental frame */}
       {lbOpen && (
-        <div id="lb" className="open">
-          <button className="lb-x" onClick={() => setLbOpen(false)}>Close ✕</button>
+        <div id="lb" className="open"
+          onTouchStart={e => { const t = e.touches[0]; e.currentTarget._tx = t.clientX }}
+          onTouchEnd={e => {
+            const dx = e.changedTouches[0].clientX - (e.currentTarget._tx||0)
+            if (Math.abs(dx) > 50) dx < 0 ? setLbIdx(i=>(i+1)%lbImgs.length) : setLbIdx(i=>(i-1+lbImgs.length)%lbImgs.length)
+          }}
+        >
+          <button className="lb-x" onClick={() => setLbOpen(false)}>Close</button>
           {lbImgs[lbIdx] && (
             <>
               {lbImgs[lbIdx].type === 'video' ? (
-                <video
-                  key={lbImgs[lbIdx].src}
-                  id="lb-img"
-                  src={lbImgs[lbIdx].src}
-                  controls autoPlay
-                  style={{maxWidth:'100%', maxHeight:'65vh', border:'2px solid rgba(139,105,20,.5)', boxShadow:'0 0 60px rgba(139,105,20,.3)'}}
-                />
+                <div className="lb-frame">
+                  <div className="lb-corner-bl" /><div className="lb-corner-tr" />
+                  <video key={lbImgs[lbIdx].src} id="lb-img" src={lbImgs[lbIdx].src} controls autoPlay
+                    style={{maxWidth:'min(85vw,900px)',maxHeight:'62vh'}} />
+                </div>
               ) : (
-                <img id="lb-img" src={lbImgs[lbIdx].src} alt={lbImgs[lbIdx].title} />
+                <div className="lb-frame">
+                  <div className="lb-corner-bl" /><div className="lb-corner-tr" />
+                  <img id="lb-img" src={lbImgs[lbIdx].src} alt={lbImgs[lbIdx].title} />
+                </div>
               )}
-              <div className="lb-title">{lbImgs[lbIdx].title}</div>
-              {lbImgs[lbIdx].cap && <div className="lb-cap">{lbImgs[lbIdx].cap}</div>}
+              <div className="lb-meta">
+                <div className="lb-title">{lbImgs[lbIdx].title}</div>
+                {lbImgs[lbIdx].cap && <div className="lb-cap">{lbImgs[lbIdx].cap}</div>}
+              </div>
             </>
           )}
           <div className="lb-ctrl">
-            <button className="lb-b" onClick={() => setLbIdx(i=>(i-1+lbImgs.length)%lbImgs.length)}>← Prev</button>
+            <button className="lb-b" onClick={() => setLbIdx(i=>(i-1+lbImgs.length)%lbImgs.length)}>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 1 3 5l4 4"/></svg>
+              Prev
+            </button>
             <span className="lb-cnt">{lbIdx+1} / {lbImgs.length}</span>
-            <button className="lb-b" onClick={() => setLbIdx(i=>(i+1)%lbImgs.length)}>Next →</button>
+            <button className="lb-b" onClick={() => setLbIdx(i=>(i+1)%lbImgs.length)}>
+              Next
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 1 7 5 3 9"/></svg>
+            </button>
           </div>
+        </div>
+      )}
+      {/* Konami Easter Egg — ↑↑↓↓←→←→BA */}
+      {konamiActive && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:99990,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          pointerEvents:'none', flexDirection:'column', gap:'1rem',
+          animation:'lbFadeIn .3s ease forwards',
+        }}>
+          <div style={{
+            fontFamily:'var(--fraktur)', fontSize:'clamp(2.5rem,8vw,5rem)',
+            color:'var(--gold2)', textAlign:'center', lineHeight:1.2,
+            textShadow:'0 0 30px rgba(212,168,32,.8), 0 0 60px rgba(212,168,32,.4)',
+            animation:'quoteFlash .4s ease both',
+          }}>✦ Cheat Code Activated ✦</div>
+          <div style={{
+            fontFamily:'var(--display)', fontSize:'.5rem', letterSpacing:'.3em',
+            color:'rgba(212,168,32,.6)', textTransform:'uppercase',
+            animation:'quoteFlash .4s ease .1s both',
+          }}>You have discovered the ancient manuscript</div>
         </div>
       )}
     </>
