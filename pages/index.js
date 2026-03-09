@@ -83,6 +83,7 @@ export default function BookPortfolio() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [previewUrl, setPreviewUrl]       = useState(null)
   const [previewPos, setPreviewPos]       = useState({ x: 0, y: 0 })
+  const [introPhase, setIntroPhase]       = useState('closed') // 'closed' | 'opening' | 'done'
 
   const rightScrollRef = useRef(null)
   const leafRef        = useRef(null)
@@ -114,6 +115,13 @@ export default function BookPortfolio() {
       localStorage.setItem(key, v)
       setVisitCount(v)
     } catch(e) {}
+  }, [])
+
+  // Opening book animation on load
+  useEffect(() => {
+    const t1 = setTimeout(() => setIntroPhase('opening'), 300)
+    const t2 = setTimeout(() => setIntroPhase('done'), 1800)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
   useEffect(() => {
@@ -334,10 +342,30 @@ export default function BookPortfolio() {
           @keyframes quoteFlash { 0%{opacity:0;transform:scale(.96)} 20%{opacity:1;transform:scale(1)} 75%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.02)} }
           @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
           @keyframes otwPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+          .intro-opening #book { animation: bookOpen .9s cubic-bezier(.16,1,.3,1) .15s both; }
+          @keyframes bookOpen { from{opacity:0;transform:rotateX(8deg) scale(.92)} to{opacity:1;transform:rotateX(2deg) scale(1)} }
+          .intro-done #book { opacity:1; transform:rotateX(2deg); }
         `}</style>
       </Head>
 
-      <div id="book-scene" className={darkMode ? 'dark-mode' : ''}>
+      <div id="book-scene" className={[darkMode ? 'dark-mode' : '', `intro-${introPhase}`, introPhase === 'opening' ? 'intro-opening' : ''].filter(Boolean).join(' ')}>
+
+      {/* Intro overlay — candle-light curtain */}
+      {introPhase !== 'done' && (
+        <div className={`intro-curtain${introPhase === 'opening' ? ' opening' : ''}`}>
+          <div className="intro-curtain-inner">
+            <div className="intro-monogram">MIY</div>
+            <div className="intro-title">Muhamad Irpan Yasin</div>
+            <div className="intro-subtitle">— Portfolio —</div>
+            <div className="intro-ornament">✦ · · · ✦ · · · ✦</div>
+          </div>
+        </div>
+      )}
+
+      {/* Atmospheric vignette corners */}
+      <div className="scene-vignette" />
+      <div className="scene-candle scene-candle-l" />
+      <div className="scene-candle scene-candle-r" />
 
       {/* Particle dust canvas */}
       <canvas ref={canvasRef} style={{position:'fixed',inset:0,zIndex:0,pointerEvents:'none'}} />
@@ -369,7 +397,7 @@ export default function BookPortfolio() {
             <div className="left-inner">
               <div className="book-monogram">MIY</div>
               <div className="book-author-name">M. Irpan Yasin</div>
-              <div className="ornament">— ✦ —</div>
+              <div className="ornament shimmer-ornament">— ✦ —</div>
               <div className="toc-label">Table of Contents</div>
               <div className="ornament" style={{fontSize:'.65rem',marginBottom:'.6rem'}}>· · · · · · · · · ·</div>
 
@@ -405,9 +433,16 @@ export default function BookPortfolio() {
           <div id="page-right" style={{position:'relative'}}>
             {isFlipping && <div className="flip-leaf" ref={leafRef} style={flipStyle} />}
 
-            {/* Chapter progress bar */}
-            <div style={{position:'absolute',top:0,left:0,right:0,height:'3px',background:'rgba(139,105,20,.1)',zIndex:5,pointerEvents:'none'}}>
-              <div style={{height:'100%',width:`${((CHAPTER_ORDER.indexOf(current)+1)/CHAPTER_ORDER.length)*100}%`,background:'linear-gradient(90deg,var(--red),var(--gold))',transition:'width .6s cubic-bezier(.16,1,.3,1)'}}/>
+            {/* Chapter ribbon — decorative progress */}
+            <div className="chapter-ribbon-wrap">
+              <div className="chapter-ribbon-track" />
+              <div
+                className="chapter-ribbon-fill"
+                style={{width:`${((CHAPTER_ORDER.indexOf(current)+1)/CHAPTER_ORDER.length)*100}%`}}
+              />
+              <div className="chapter-ribbon-label">
+                {CHAPTERS[current].numRoman} · {CHAPTERS[current].title}
+              </div>
             </div>
 
             <div className="right-inner" id="right-scroll" ref={rightScrollRef} style={{opacity:sectionVisible?1:0,transition:'opacity .35s ease'}}>
@@ -478,8 +513,8 @@ export default function BookPortfolio() {
                   {num:'§ III',tag:'Sales Leadership',      title:'Sales Team Development',       desc:'Successfully supervised and trained multiple sales teams, consistently achieving and exceeding quarterly targets through effective coaching and strategic planning.',         tech:['Team Training','Sales Strategy','Performance'],  links:[],onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772679048/Team_Imoo_p6c38j.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685898/20190728_203730_bu8dwi.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772688847/IMG_20221021_160056_ivbghx.jpg'],galleryTitle:'Sales Team Development'},
                   {num:'§ IV', tag:'Professional Development',title:'Credentials & Recognition', desc:'A distinguished portfolio of credentials — from Japanese and German language certificates to awards of excellence recognising outstanding contribution to commerce.',       tech:['Certifications','Awards','Achievement'],         links:[],onCerts:true},
                   {num:'§ V',  tag:'Business Development',  title:'Partner Network Expansion',    desc:'Built and maintained strategic relationships with sales partners, expanding market reach and increasing revenue streams across regions through effective networking.',      tech:['Partnership','Networking','Growth'],             links:[],onGallery:true,galleryImgs:['https://res.cloudinary.com/dyhvx9wit/image/upload/v1772687273/20241204_162834_isoiyr.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685891/IMG_20190920_193619_pwc6au.jpg','https://res.cloudinary.com/dyhvx9wit/image/upload/v1772685896/IMG20190806091605_ssinhd.jpg'],galleryTitle:'Partner Network'},
-                ].map(item => (
-                  <div key={item.title} className="porto-entry">
+                ].map((item, idx) => (
+                  <div key={item.title} className="porto-entry stagger-entry" style={{animationDelay:`${idx * 0.1}s`}}>
                     <div className="porto-entry-header"><span className="porto-num">{item.num}</span><span className="porto-tag">{item.tag}</span></div>
                     <div className="porto-title">{item.title}</div>
                     <p className="porto-desc">{item.desc}</p>
@@ -511,8 +546,8 @@ export default function BookPortfolio() {
                   {num:'§ IV', tag:'Personal Portfolio',title:'Portfolio Sites',                desc:'Custom-built portfolio websites for real clients — designed to make strong first impressions and showcase their unique skills to prospective employers and collaborators.',                           tech:['Next.js','CSS','Vercel'],                links:[{href:'https://m-nazar.vercel.app/',label:'→ Nazar Portfolio'},{href:'https://portofolio-anisa.vercel.app/',label:'→ Anisa Portfolio'}]},
                   {num:'§ V',  tag:'Machine Learning',  title:'Sales ML Analytics',             desc:'An AI-powered analytics platform using machine learning to uncover sales patterns, forecast trends, and deliver actionable business insights in real-time.',                                         tech:['Python','Streamlit','ML'],               links:[{href:'https://sales-ml-analytics.streamlit.app/',label:'→ Visit Application'}]},
                   {num:'§ VI', tag:'E-Commerce & POS',  title:'Online Store & POS System',      desc:'Full-featured digital commerce solutions — from a fresh grocery e-commerce store with cart & checkout, to a coffee shop POS system with real-time transaction flow.',                               tech:['Next.js','Tailwind','Vercel'],           links:[{href:'https://ecommerce-freshmarket.vercel.app/',label:'→ FreshMarket Store'},{href:'https://demo-coffee-shop-v2.vercel.app/',label:'→ Coffee Shop POS'}]},
-                ].map(item => (
-                  <div key={item.title} className="porto-entry">
+                ].map((item, idx) => (
+                  <div key={item.title} className="porto-entry stagger-entry" style={{animationDelay:`${idx * 0.09}s`}}>
                     <div className="porto-entry-header"><span className="porto-num">{item.num}</span><span className="porto-tag">{item.tag}</span></div>
                     <div className="porto-title">{item.title}</div>
                     <p className="porto-desc">{item.desc}</p>
@@ -550,8 +585,8 @@ export default function BookPortfolio() {
                   { icon: '💻', title: 'Technical Tools',     pct: 75, chips: ['MS Excel','MS Word','PowerPoint','Outlook','MS Office Suite'] },
                   { icon: '🎯', title: 'Management',          pct: 80, chips: ['Team Management','Strategic Planning','Time Management','Problem Solving','Decision Making'] },
                   { icon: '🤝', title: 'Soft Skills',         pct: 78, chips: ['Communication','Teamwork','Fast Learner','Adaptable','Resilient'] },
-                ].map(s => (
-                  <div key={s.title} className="skill-entry">
+                ].map((s, idx) => (
+                  <div key={s.title} className="skill-entry stagger-entry" style={{animationDelay:`${idx * 0.08}s`}}>
                     <div className="skill-entry-title"><span>{s.icon}</span> {s.title}</div>
                     <div className="skill-ink-bar-wrap">
                       <div className="skill-ink-bar" style={{ width: `${s.pct}%` }} />
