@@ -13,6 +13,16 @@ const CHAPTERS = {
 const CHAPTER_ORDER = ['home','portfolio','projects','skills','social','travel','contact']
 
 
+// Cloudinary auto-optimize: resize ke thumbnail, WebP, quality auto, eager load
+const cloudinaryThumb = (url, w = 400, h = 400) => {
+  if (!url.includes('res.cloudinary.com')) return url
+  // Insert transformation params after /upload/
+  return url.replace(
+    '/upload/',
+    `/upload/w_${w},h_${h},c_fill,q_auto,f_auto,dpr_auto/`
+  )
+}
+
 const TRAVEL_PHOTOS = [
   { src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772681838/Dieng_4_msizry.jpg', dest:'Dieng, Indonesia',    year:'2024' },
   { src:'https://res.cloudinary.com/dyhvx9wit/image/upload/v1772684165/IMG_20240819_112414_144_o78tbx.jpg', dest:'Merbabu Mount, Indonesia',  year:'2024' },
@@ -706,10 +716,17 @@ export default function BookPortfolio() {
                     <div
                       key={i}
                       className={`travel-card travel-card-${(i % 3)}`}
-                      onClick={() => openLB(TRAVEL_PHOTOS.map(p => ({ src: p.src, title: p.dest, cap: p.year })), photo.dest, i)}
+                      onClick={() => openLB(TRAVEL_PHOTOS.map(p => ({ src: cloudinaryThumb(p.src, 1200, 900), title: p.dest, cap: p.year })), photo.dest, i)}
                     >
                       <div className="travel-card-inner">
-                        <img src={photo.src} alt={photo.dest} loading="lazy" decoding="async" onError={e => e.target.closest('.travel-card').style.display='none'} />
+                        <img
+                          src={cloudinaryThumb(photo.src, 400, 400)}
+                          alt={photo.dest}
+                          loading="lazy"
+                          decoding="async"
+                          onLoad={e => e.target.classList.add('loaded')}
+                          onError={e => e.target.closest('.travel-card').style.display='none'}
+                        />
                         <div className="travel-card-footer">
                           <span className="travel-dest">📍 {photo.dest}</span>
                           <span className="travel-year">{photo.year}</span>
