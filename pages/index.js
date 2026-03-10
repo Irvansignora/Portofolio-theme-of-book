@@ -187,6 +187,7 @@ export default function BookPortfolio() {
   const konamiAnimRef      = useRef(null)
   const dustPuffRef        = useRef([])
   const dustAnimRef        = useRef(null)
+  const introPhaseRef      = useRef('closed') // mirrors introPhase state for use in closures
 
   const spawnDustPuff = useCallback(() => {
     const canvas = canvasRef.current
@@ -436,14 +437,18 @@ export default function BookPortfolio() {
 
   // Opening book animation — timer + scroll to open
   const openBook = useCallback(() => {
-    if (introPhase === 'opening' || introPhase === 'done') return
+    if (introPhaseRef.current === 'opening' || introPhaseRef.current === 'done') return
+    introPhaseRef.current = 'opening'
     setIntroPhase('opening')
-    setTimeout(() => setIntroPhase('done'), 900)
-  }, [introPhase])
+    setTimeout(() => {
+      introPhaseRef.current = 'done'
+      setIntroPhase('done')
+    }, 900)
+  }, []) // no deps needed — reads from ref, not stale state
 
   useEffect(() => {
     // Show intro content after short delay
-    const tReady = setTimeout(() => setIntroPhase('ready'), 300)
+    const tReady = setTimeout(() => { introPhaseRef.current = 'ready'; setIntroPhase('ready') }, 300)
 
     // Countdown timer 5 → 0, then auto-open
     let count = 5
@@ -494,8 +499,8 @@ export default function BookPortfolio() {
       // Update bookmark height directly — no re-render needed
       if (bookmarkEl) bookmarkEl.style.height = `${32 + pct * 0.58}px`
       // Only trigger re-render at threshold crossings (80 and 95) to update UI
-      const prev = scrollPctRef.current  // ✅ baca dari ref, bukan stale state
-      scrollPctRef.current = pct          // ✅ update ref sebelum conditional
+      const prev = scrollPctRef.current
+      scrollPctRef.current = pct
       if ((prev < 80 && pct >= 80) || (prev >= 80 && pct < 80) ||
           (prev < 95 && pct >= 95) || (prev >= 95 && pct < 95)) {
         setScrollPct(pct)
