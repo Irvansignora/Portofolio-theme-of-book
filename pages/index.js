@@ -374,6 +374,10 @@ export default function BookPortfolio() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    try {
+      const key = 'portfolio_visit_count'
       const v = parseInt(localStorage.getItem(key) || '0') + 1
       localStorage.setItem(key, v)
       setVisitCount(v)
