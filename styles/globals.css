@@ -557,7 +557,7 @@ body { font-family: var(--serif); cursor: default; }
   position: relative;
   box-shadow: -8px 8px 30px rgba(0,0,0,.6), 8px 8px 30px rgba(0,0,0,.5), 0 20px 60px rgba(0,0,0,.8);
   transform: rotateX(2deg);
-  transform-style: preserve-3d;
+  transform-style: flat;
 }
 
 /* ===== SPINE ===== */
@@ -679,7 +679,6 @@ body { font-family: var(--serif); cursor: default; }
   flex: 1;
   background: linear-gradient(180deg, var(--paper) 0%, var(--paper2) 60%, var(--paper3) 100%);
   position: relative; overflow: hidden;
-  transform-style: preserve-3d;
 }
 .flip-wrapper {
   position: absolute; inset: 0;
@@ -688,6 +687,7 @@ body { font-family: var(--serif); cursor: default; }
   pointer-events: none;
   z-index: 40;
   overflow: visible;
+  transform-style: preserve-3d;
 }
 #page-right::before {
   content: ''; position: absolute; inset: 0;
@@ -1858,7 +1858,6 @@ body { font-family: var(--serif); cursor: default; }
 .project-detail-page {
   perspective: 1200px;
   perspective-origin: center center;
-  transform-style: preserve-3d;
   animation: chapterReveal .45s cubic-bezier(.16,1,.3,1) both;
 }
 @keyframes projSlideIn {
