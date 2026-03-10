@@ -491,11 +491,11 @@ export default function BookPortfolio() {
     const onScroll = () => {
       const pct = el.scrollHeight <= el.clientHeight ? 0
         : Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100)
-      scrollPctRef.current = pct
       // Update bookmark height directly — no re-render needed
       if (bookmarkEl) bookmarkEl.style.height = `${32 + pct * 0.58}px`
       // Only trigger re-render at threshold crossings (80 and 95) to update UI
-      const prev = scrollPct
+      const prev = scrollPctRef.current  // ✅ baca dari ref, bukan stale state
+      scrollPctRef.current = pct          // ✅ update ref sebelum conditional
       if ((prev < 80 && pct >= 80) || (prev >= 80 && pct < 80) ||
           (prev < 95 && pct >= 95) || (prev >= 95 && pct < 95)) {
         setScrollPct(pct)
