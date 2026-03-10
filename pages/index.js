@@ -182,6 +182,53 @@ export default function BookPortfolio() {
   const konamiParticlesRef = useRef([])
   const konamiCanvasRef    = useRef(null)
   const konamiAnimRef      = useRef(null)
+  const dustPuffRef        = useRef([])
+  const dustAnimRef        = useRef(null)
+
+  const spawnDustPuff = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    // Spawn from spine area — roughly center-left of viewport
+    const bookEl = document.getElementById('book')
+    const spineX = bookEl ? bookEl.getBoundingClientRect().left + 28 : window.innerWidth * 0.28
+    const bookTop = bookEl ? bookEl.getBoundingClientRect().top : window.innerHeight * 0.1
+    const bookH   = bookEl ? bookEl.getBoundingClientRect().height : window.innerHeight * 0.8
+    const DUST_COLORS = ['rgba(196,152,30,.7)','rgba(220,180,80,.5)','rgba(244,234,213,.4)','rgba(160,120,20,.6)']
+    for (let i = 0; i < 22; i++) {
+      const y = bookTop + Math.random() * bookH
+      dustPuffRef.current.push({
+        x: spineX + Math.random() * 18,
+        y,
+        r: Math.random() * 3.5 + 0.8,
+        vx: (Math.random() - 0.3) * 2.5,
+        vy: -(Math.random() * 2.2 + 0.5),
+        alpha: Math.random() * 0.6 + 0.2,
+        decay: Math.random() * 0.018 + 0.010,
+        life: 0,
+        color: DUST_COLORS[Math.floor(Math.random() * DUST_COLORS.length)],
+      })
+    }
+    const ctx = canvas.getContext('2d')
+    const animate = () => {
+      const alive = dustPuffRef.current.filter(p => p.life < 1)
+      if (alive.length === 0) { dustAnimRef.current = null; return }
+      alive.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        p.vx *= 0.96
+        p.vy *= 0.97
+        p.life += p.decay
+        const fade = 1 - p.life
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r * (1 + p.life * 0.8), 0, Math.PI * 2)
+        ctx.fillStyle = p.color.replace(/[\d.]+\)$/, `${parseFloat(p.color.match(/[\d.]+\)$/)?.[0] ?? '0.5') * fade})`)
+        ctx.fill()
+      })
+      dustPuffRef.current = alive
+      dustAnimRef.current = requestAnimationFrame(animate)
+    }
+    if (!dustAnimRef.current) dustAnimRef.current = requestAnimationFrame(animate)
+  }, [])
 
   const fireKonamiParticles = useCallback(() => {
     const canvas = konamiCanvasRef.current
@@ -449,6 +496,7 @@ export default function BookPortfolio() {
     setIsFlipping(true)
     setMobileMenuOpen(false)
     playFlipSound()
+    spawnDustPuff()
     const q = FLIP_QUOTES[Math.floor(Math.random() * FLIP_QUOTES.length)]
     setFlipQuote(q); setShowQuote(true)
     setTimeout(() => setShowQuote(false), 900)
@@ -460,9 +508,9 @@ export default function BookPortfolio() {
       setPageNums({ l: CHAPTERS[id].pageL, r: CHAPTERS[id].pageR })
       if (rightScrollRef.current) rightScrollRef.current.scrollTop = 0
       if (id === 'home') trigCounters()
-    }, 550)
-    setTimeout(() => { setIsFlipping(false); flipping.current = false }, 1150)
-  }, [current, trigCounters, playFlipSound])
+    }, 620)
+    setTimeout(() => { setIsFlipping(false); flipping.current = false }, 1300)
+  }, [current, trigCounters, playFlipSound, spawnDustPuff])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -510,18 +558,35 @@ export default function BookPortfolio() {
     let lastMx = 0, lastMy = 0
     const spawnInk = (e) => {
       const dx = e.clientX - lastMx, dy = e.clientY - lastMy
-      if (Math.hypot(dx,dy) < 14) return
+      const dist = Math.hypot(dx,dy)
+      if (dist < 10) return
       lastMx = e.clientX; lastMy = e.clientY
-      if (inkDrops.length > 24) inkDrops.shift()
+      if (inkDrops.length > 36) inkDrops.shift()
+      // Main drop
       inkDrops.push({
         x: e.clientX, y: e.clientY,
-        r: Math.random() * 2.2 + 0.8,
-        alpha: Math.random() * 0.4 + 0.15,
+        r: Math.random() * 3.0 + 1.2,
+        alpha: Math.random() * 0.52 + 0.25,
         life: 0,
-        decay: Math.random() * 0.016 + 0.01,
-        vx: (Math.random()-.5)*0.35,
-        vy: Math.random()*0.5 + 0.15,
+        decay: Math.random() * 0.013 + 0.008,
+        vx: (Math.random()-.5)*0.5,
+        vy: Math.random()*0.6 + 0.18,
       })
+      // Occasional micro-splatter when moving fast
+      if (dist > 22 && Math.random() > 0.55) {
+        for (let s = 0; s < 2; s++) {
+          inkDrops.push({
+            x: e.clientX + (Math.random()-.5)*16,
+            y: e.clientY + (Math.random()-.5)*16,
+            r: Math.random() * 1.4 + 0.4,
+            alpha: Math.random() * 0.28 + 0.10,
+            life: 0,
+            decay: Math.random() * 0.022 + 0.016,
+            vx: (Math.random()-.5)*1.2,
+            vy: Math.random()*0.9 + 0.25,
+          })
+        }
+      }
     }
     window.addEventListener('mousemove', spawnInk)
 
@@ -534,12 +599,16 @@ export default function BookPortfolio() {
         d.life += d.decay
         d.x += d.vx
         d.y += d.vy
-        d.vy += 0.035
+        d.vy += 0.04
+        d.vx *= 0.985
         const fade = Math.max(0, 1 - d.life)
         ctx.beginPath()
-        ctx.ellipse(d.x, d.y, d.r * (1 + d.life*.4), d.r, 0, 0, Math.PI*2)
-        ctx.fillStyle = `rgba(181,120,15,${d.alpha * fade * .6})`
+        ctx.ellipse(d.x, d.y, d.r * (1 + d.life*.5), d.r * (1 - d.life*.15), Math.atan2(d.vy, d.vx), 0, Math.PI*2)
+        ctx.fillStyle = `rgba(158,102,8,${d.alpha * fade * .72})`
+        ctx.shadowColor = `rgba(120,70,5,${d.alpha * fade * .3})`
+        ctx.shadowBlur = d.r * 1.5
         ctx.fill()
+        ctx.shadowBlur = 0
         if (d.life >= 1) inkDrops.splice(i, 1)
       }
 
@@ -597,7 +666,8 @@ export default function BookPortfolio() {
     const onLeave = () => { dot.classList.remove('hovering'); ring.classList.remove('hovering') }
 
     window.addEventListener('mousemove', onMove)
-    document.querySelectorAll('a,button,[role="button"]').forEach(el => {
+    const hoverEls = Array.from(document.querySelectorAll('a,button,[role="button"]'))
+    hoverEls.forEach(el => {
       el.addEventListener('mouseenter', onEnter)
       el.addEventListener('mouseleave', onLeave)
     })
@@ -606,6 +676,10 @@ export default function BookPortfolio() {
     return () => {
       window.removeEventListener('mousemove', onMove)
       cancelAnimationFrame(raf)
+      hoverEls.forEach(el => {
+        el.removeEventListener('mouseenter', onEnter)
+        el.removeEventListener('mouseleave', onLeave)
+      })
     }
   }, [])
 
@@ -641,7 +715,7 @@ export default function BookPortfolio() {
     setFormSending(false)
   }
 
-  const flipStyle = isFlipping ? { animation: `${flipDir==='forward'?'flipForward':'flipBackward'} 1.1s cubic-bezier(0.25,0.1,0.25,1) forwards` } : {}
+  const flipStyle = isFlipping ? { animation: `${flipDir==='forward'?'flipForward':'flipBackward'} 1.25s cubic-bezier(0.22,1,0.36,1) forwards` } : {}
 
   return (
     <>
@@ -649,33 +723,207 @@ export default function BookPortfolio() {
         <title>Muhamad Irpan Yasin — Sales · Finance · Data Analysis Portfolio</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>{`
+
+          /* ====================================================
+             UPGRADED 3D PAGE FLIP SYSTEM
+             - perspective on parent wrapper, not per-keyframe
+             - dramatic pause at 90° (page standing upright)
+             - backface: dark paper texture visible mid-flip
+             - progressive curl shadow that peaks at 90°
+             - shimmer highlight sweeps across page surface
+             ==================================================== */
+
+          /* Wrapper gives stable perspective context */
+          .flip-wrapper {
+            position:absolute; inset:0;
+            perspective:1800px;
+            perspective-origin:0% 50%;
+            pointer-events:none; z-index:40;
+            overflow:visible;
+          }
+
           @keyframes flipForward {
-            0%   { transform:perspective(1600px) rotateY(0deg); box-shadow:4px 0 20px rgba(0,0,0,.12); }
-            15%  { transform:perspective(1600px) rotateY(-22deg); box-shadow:14px 0 45px rgba(0,0,0,.28); }
-            45%  { transform:perspective(1600px) rotateY(-75deg); box-shadow:22px 0 65px rgba(0,0,0,.38); }
-            50%  { transform:perspective(1600px) rotateY(-90deg); box-shadow:26px 0 75px rgba(0,0,0,.42); }
-            55%  { transform:perspective(1600px) rotateY(-105deg); box-shadow:22px 0 65px rgba(0,0,0,.38); }
-            82%  { transform:perspective(1600px) rotateY(-158deg); box-shadow:8px 0 28px rgba(0,0,0,.18); opacity:.7; }
-            100% { transform:perspective(1600px) rotateY(-180deg); box-shadow:none; opacity:0; }
+            0%   {
+              transform: rotateY(0deg) translateZ(0);
+              box-shadow: 2px 0 8px rgba(0,0,0,.1);
+              filter: brightness(1);
+            }
+            12%  {
+              transform: rotateY(-18deg) translateZ(2px);
+              box-shadow: 12px 0 40px rgba(0,0,0,.32), 0 4px 20px rgba(0,0,0,.2);
+              filter: brightness(0.97);
+            }
+            /* Acceleration into the flip */
+            38%  {
+              transform: rotateY(-72deg) translateZ(18px);
+              box-shadow: 28px 0 70px rgba(0,0,0,.50), 0 8px 30px rgba(0,0,0,.3);
+              filter: brightness(0.88);
+            }
+            /* DRAMATIC PAUSE — page standing upright at 90° */
+            46%  {
+              transform: rotateY(-90deg) translateZ(22px);
+              box-shadow: 32px 0 80px rgba(0,0,0,.58), 0 10px 35px rgba(0,0,0,.35);
+              filter: brightness(0.72);
+            }
+            54%  {
+              transform: rotateY(-90deg) translateZ(22px);
+              box-shadow: 32px 0 80px rgba(0,0,0,.58), 0 10px 35px rgba(0,0,0,.35);
+              filter: brightness(0.68);
+            }
+            /* Decelerate landing */
+            70%  {
+              transform: rotateY(-118deg) translateZ(14px);
+              box-shadow: 18px 0 50px rgba(0,0,0,.38), 0 6px 22px rgba(0,0,0,.22);
+              filter: brightness(0.82);
+            }
+            88%  {
+              transform: rotateY(-162deg) translateZ(4px);
+              box-shadow: 5px 0 20px rgba(0,0,0,.18);
+              filter: brightness(0.93);
+              opacity: .85;
+            }
+            100% {
+              transform: rotateY(-180deg) translateZ(0);
+              box-shadow: none;
+              filter: brightness(1);
+              opacity: 0;
+            }
           }
+
           @keyframes flipBackward {
-            0%   { transform:perspective(1600px) rotateY(-180deg); box-shadow:none; opacity:0; }
-            18%  { transform:perspective(1600px) rotateY(-158deg); box-shadow:8px 0 28px rgba(0,0,0,.18); opacity:.7; }
-            45%  { transform:perspective(1600px) rotateY(-105deg); box-shadow:22px 0 65px rgba(0,0,0,.38); opacity:1; }
-            50%  { transform:perspective(1600px) rotateY(-90deg); box-shadow:26px 0 75px rgba(0,0,0,.42); }
-            55%  { transform:perspective(1600px) rotateY(-75deg); box-shadow:22px 0 65px rgba(0,0,0,.38); }
-            85%  { transform:perspective(1600px) rotateY(-22deg); box-shadow:14px 0 45px rgba(0,0,0,.28); }
-            100% { transform:perspective(1600px) rotateY(0deg); box-shadow:4px 0 20px rgba(0,0,0,.12); }
+            0%   {
+              transform: rotateY(-180deg) translateZ(0);
+              box-shadow: none;
+              filter: brightness(1);
+              opacity: 0;
+            }
+            12%  {
+              transform: rotateY(-162deg) translateZ(4px);
+              box-shadow: 5px 0 20px rgba(0,0,0,.18);
+              filter: brightness(0.93);
+              opacity: .85;
+            }
+            30%  {
+              transform: rotateY(-118deg) translateZ(14px);
+              box-shadow: 18px 0 50px rgba(0,0,0,.38), 0 6px 22px rgba(0,0,0,.22);
+              filter: brightness(0.82);
+              opacity: 1;
+            }
+            /* DRAMATIC PAUSE — page standing upright at 90° */
+            46%  {
+              transform: rotateY(-90deg) translateZ(22px);
+              box-shadow: 32px 0 80px rgba(0,0,0,.58), 0 10px 35px rgba(0,0,0,.35);
+              filter: brightness(0.68);
+            }
+            54%  {
+              transform: rotateY(-90deg) translateZ(22px);
+              box-shadow: 32px 0 80px rgba(0,0,0,.58), 0 10px 35px rgba(0,0,0,.35);
+              filter: brightness(0.72);
+            }
+            62%  {
+              transform: rotateY(-72deg) translateZ(18px);
+              box-shadow: 28px 0 70px rgba(0,0,0,.50), 0 8px 30px rgba(0,0,0,.3);
+              filter: brightness(0.88);
+            }
+            88%  {
+              transform: rotateY(-18deg) translateZ(2px);
+              box-shadow: 12px 0 40px rgba(0,0,0,.32), 0 4px 20px rgba(0,0,0,.2);
+              filter: brightness(0.97);
+            }
+            100% {
+              transform: rotateY(0deg) translateZ(0);
+              box-shadow: 2px 0 8px rgba(0,0,0,.1);
+              filter: brightness(1);
+            }
           }
+
+          /* Shimmer sweep that plays once at start of flip */
+          @keyframes pageShimmer {
+            0%   { opacity:0; left:-120%; }
+            15%  { opacity:1; }
+            55%  { opacity:0.6; left:160%; }
+            100% { opacity:0; left:160%; }
+          }
+
+          /* Backface paper — visible when page is > 90° through flip */
+          @keyframes backfaceReveal {
+            0%,44% { opacity:0; }
+            50%     { opacity:1; }
+            100%    { opacity:1; }
+          }
+
           .flip-leaf {
             position:absolute; top:0; left:0; right:0; bottom:0;
-            transform-origin:left center; transform-style:preserve-3d;
-            pointer-events:none; z-index:40;
-            background:linear-gradient(108deg,#e8d5b0 0%,#f4ead5 38%,#ede0c4 65%,#e2cfa0 100%);
-            will-change:transform,box-shadow;
+            transform-origin:left center;
+            transform-style:preserve-3d;
+            pointer-events:none;
+            background:linear-gradient(108deg,#ddc898 0%,#f4ead5 30%,#efe3c6 58%,#e5d4a4 85%,#dcc58e 100%);
+            will-change:transform,filter,box-shadow;
           }
-          .flip-leaf::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(0,0,0,.24) 0%,rgba(0,0,0,.07) 16%,rgba(255,248,230,.18) 32%,transparent 48%,rgba(0,0,0,.03) 72%,rgba(0,0,0,.12) 100%); pointer-events:none; z-index:1; }
-          .flip-leaf::after  { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E"); opacity:.5; pointer-events:none; z-index:0; }
+
+          /* Front face — parchment grain + page-crease shadow */
+          .flip-leaf::before {
+            content:'';
+            position:absolute; inset:0;
+            background:
+              /* left binding shadow */
+              linear-gradient(90deg,
+                rgba(0,0,0,.28) 0%,
+                rgba(0,0,0,.10) 8%,
+                rgba(255,248,230,.20) 18%,
+                transparent 35%,
+                /* center fold highlight */
+                rgba(255,255,230,.08) 48%,
+                transparent 55%,
+                /* right edge ambient */
+                rgba(0,0,0,.04) 80%,
+                rgba(0,0,0,.14) 100%
+              );
+            pointer-events:none; z-index:2;
+          }
+
+          /* Shimmer highlight sweep */
+          .flip-leaf-shimmer {
+            position:absolute; top:0; bottom:0; width:35%;
+            background:linear-gradient(105deg,
+              transparent 0%,
+              rgba(255,250,220,.08) 20%,
+              rgba(255,248,210,.32) 50%,
+              rgba(255,250,220,.08) 80%,
+              transparent 100%
+            );
+            pointer-events:none; z-index:3;
+            animation: pageShimmer 1.15s cubic-bezier(.4,0,.6,1) forwards;
+          }
+
+          /* Grain texture */
+          .flip-leaf-grain {
+            position:absolute; inset:0;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+            opacity:.55; pointer-events:none; z-index:1;
+          }
+
+          /* Backface — the underside of the page, aged paper */
+          .flip-leaf-back {
+            position:absolute; inset:0;
+            background:linear-gradient(108deg,#cbb882 0%,#e0ceac 40%,#d8c49a 100%);
+            backface-visibility:visible;
+            pointer-events:none; z-index:4;
+            animation: backfaceReveal 1.15s forwards;
+          }
+          .flip-leaf-back::before {
+            content:'';
+            position:absolute; inset:0;
+            background:
+              linear-gradient(90deg,
+                rgba(0,0,0,.18) 0%,
+                rgba(0,0,0,.06) 12%,
+                transparent 30%,
+                rgba(255,248,200,.06) 55%,
+                transparent 70%,
+                rgba(0,0,0,.10) 100%
+              );
+          }
           @keyframes quillBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
           @keyframes quoteFlash { 0%{opacity:0;transform:scale(.96)} 20%{opacity:1;transform:scale(1)} 75%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.02)} }
           @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -706,7 +954,6 @@ export default function BookPortfolio() {
       <div id="book-scene" className={[
         darkMode ? 'dark-mode' : '',
         `intro-${introPhase}`,
-        introPhase === 'opening' ? 'intro-opening' : '',
         konamiActive ? 'konami-mode' : '',
       ].filter(Boolean).join(' ')}>
 
@@ -885,7 +1132,15 @@ export default function BookPortfolio() {
 
           {/* RIGHT PAGE */}
           <div id="page-right" style={{position:'relative'}}>
-            {isFlipping && !isMobile && <div className="flip-leaf" ref={leafRef} style={flipStyle} />}
+            {isFlipping && !isMobile && (
+              <div className="flip-wrapper">
+                <div className="flip-leaf" ref={leafRef} style={flipStyle}>
+                  <div className="flip-leaf-grain" />
+                  <div className="flip-leaf-shimmer" />
+                  <div className="flip-leaf-back" />
+                </div>
+              </div>
+            )}
 
             {/* Chapter ribbon — decorative progress */}
             <div className="chapter-ribbon-wrap">
@@ -1264,7 +1519,7 @@ export default function BookPortfolio() {
                           loading="lazy"
                           decoding="async"
                           onLoad={e => e.target.classList.add('loaded')}
-                          onError={e => e.target.closest('.travel-card').style.display='none'}
+                          onError={e => { const card = e.target.closest('.travel-card'); if(card) { card.style.opacity='0'; card.style.pointerEvents='none'; card.style.height='0'; card.style.minHeight='0'; card.style.overflow='hidden'; } }}
                         />
                         <div className="travel-card-footer">
                           <span className="travel-dest">📍 {photo.dest}</span>
@@ -1275,9 +1530,6 @@ export default function BookPortfolio() {
                   ))}
                 </div>
 
-                <p className="photo-placeholder-note" style={{textAlign:'center',marginTop:'1rem'}}>
-                  * Foto placeholder — ganti src di TRAVEL_PHOTOS dengan URL Cloudinary lu
-                </p>
                 <div className="page-num-right">{pageNums.r}</div>
               </div>
 
@@ -1429,7 +1681,7 @@ export default function BookPortfolio() {
         }}>
           <span style={{
             fontFamily:'var(--display)', fontSize:'.38rem', color:'var(--gold)',
-            letterSpacing:'.2em', textTransform:'uppercase',
+            textTransform:'uppercase',
             writingMode:'vertical-rl', letterSpacing:'.25em',
             animation:'quillBob 2.2s ease-in-out infinite',
           }}>scroll</span>
