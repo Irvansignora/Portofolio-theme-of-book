@@ -158,7 +158,9 @@ export default function BookPortfolio() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [previewUrl, setPreviewUrl]       = useState(null)
   const [previewPos, setPreviewPos]       = useState({ x: 0, y: 0 })
-  const [introPhase, setIntroPhase]       = useState('closed') // 'closed' | 'opening' | 'done'
+  const [introPhase, setIntroPhase]       = useState('closed') // 'closed' | 'ready' | 'opening' | 'done'
+  const [introTimer, setIntroTimer]       = useState(5)        // countdown seconds
+  const [introScrolled, setIntroScrolled] = useState(false)
   const [toolbarOpen, setToolbarOpen]     = useState(false)
   const [konamiActive, setKonamiActive]   = useState(false)
   const [konamiPhase, setKonamiPhase]     = useState(0)
@@ -431,12 +433,48 @@ export default function BookPortfolio() {
     } catch(e) {}
   }, [])
 
-  // Opening book animation on load
+  // Opening book animation — timer + scroll to open
+  const openBook = useCallback(() => {
+    if (introPhase === 'opening' || introPhase === 'done') return
+    setIntroPhase('opening')
+    setTimeout(() => setIntroPhase('done'), 900)
+  }, [introPhase])
+
   useEffect(() => {
-    const t1 = setTimeout(() => setIntroPhase('opening'), 500)
-    const t2 = setTimeout(() => setIntroPhase('done'), 2200)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [])
+    // Show intro content after short delay
+    const tReady = setTimeout(() => setIntroPhase('ready'), 300)
+
+    // Countdown timer 5 → 0, then auto-open
+    let count = 5
+    setIntroTimer(count)
+    const interval = setInterval(() => {
+      count -= 1
+      setIntroTimer(count)
+      if (count <= 0) {
+        clearInterval(interval)
+        openBook()
+      }
+    }, 1000)
+
+    // Scroll / wheel / touch to open early
+    const onWheel = (e) => { if (e.deltaY > 0) openBook() }
+    const onTouchStart = (e) => { e._startY = e.touches[0].clientY }
+    const onTouchEnd = (e) => {
+      const dy = (e._startY || 0) - e.changedTouches[0].clientY
+      if (dy > 30) openBook()
+    }
+    window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      clearTimeout(tReady)
+      clearInterval(interval)
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setSectionVisible(false)
@@ -970,7 +1008,11 @@ export default function BookPortfolio() {
 
       {/* Intro overlay — candle-light curtain */}
       {introPhase !== 'done' && (
-        <div className={`intro-curtain${introPhase === 'opening' ? ' opening' : ''}`}>
+        <div
+          className={`intro-curtain${introPhase === 'opening' ? ' opening' : ''}`}
+          onClick={openBook}
+          style={{cursor: introPhase === 'ready' ? 'pointer' : 'default'}}
+        >
           <div className="intro-curtain-inner">
             <div className="intro-welcome">— Welcome to my journey —</div>
             <div className="intro-monogram">MIY</div>
@@ -980,8 +1022,40 @@ export default function BookPortfolio() {
               "A life's work, bound between these pages."
             </div>
             <div className="intro-ornament">✦ · · · ✦ · · · ✦</div>
+
+            {/* Timer + scroll hint */}
+            {introPhase === 'ready' && (
+              <div className="intro-open-row">
+                {/* Circular countdown */}
+                <div className="intro-timer-wrap">
+                  <svg className="intro-timer-svg" viewBox="0 0 44 44">
+                    <circle className="intro-timer-track" cx="22" cy="22" r="18" />
+                    <circle
+                      className="intro-timer-ring"
+                      cx="22" cy="22" r="18"
+                      style={{
+                        strokeDasharray: `${2 * Math.PI * 18}`,
+                        strokeDashoffset: `${2 * Math.PI * 18 * (1 - introTimer / 5)}`,
+                        transition: introTimer < 5 ? 'stroke-dashoffset 1s linear' : 'none',
+                      }}
+                    />
+                  </svg>
+                  <span className="intro-timer-num">{introTimer}</span>
+                </div>
+
+                <div className="intro-open-cta">
+                  <div className="intro-open-label">scroll or click to open</div>
+                  <div className="intro-scroll-arrow">
+                    <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
+                      <rect x="1" y="1" width="12" height="20" rx="6" stroke="rgba(181,137,15,.4)" strokeWidth="1.2"/>
+                      <circle className="intro-scroll-dot" cx="7" cy="6" r="2" fill="rgba(181,137,15,.7)"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="intro-hint">opening the book…</div>
+          {introPhase !== 'ready' && <div className="intro-hint">opening the book…</div>}
         </div>
       )}
 
