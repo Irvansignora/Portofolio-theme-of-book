@@ -148,6 +148,7 @@ export default function BookPortfolio() {
   const [formError, setFormError]         = useState(false)
   const [formSending, setFormSending]     = useState(false)
   const [scrollPct, setScrollPct]         = useState(0)
+  const scrollPctRef                       = useRef(0)
   const [soundOn, setSoundOn]             = useState(false)
   const [flipQuote, setFlipQuote]         = useState('')
   const [showQuote, setShowQuote]         = useState(false)
@@ -486,12 +487,21 @@ export default function BookPortfolio() {
   useEffect(() => {
     const el = rightScrollRef.current
     if (!el) return
+    const bookmarkEl = document.getElementById('scroll-bookmark')
     const onScroll = () => {
       const pct = el.scrollHeight <= el.clientHeight ? 0
         : Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100)
-      setScrollPct(pct)
+      scrollPctRef.current = pct
+      // Update bookmark height directly — no re-render needed
+      if (bookmarkEl) bookmarkEl.style.height = `${32 + pct * 0.58}px`
+      // Only trigger re-render at threshold crossings (80 and 95) to update UI
+      const prev = scrollPct
+      if ((prev < 80 && pct >= 80) || (prev >= 80 && pct < 80) ||
+          (prev < 95 && pct >= 95) || (prev >= 95 && pct < 95)) {
+        setScrollPct(pct)
+      }
     }
-    el.addEventListener('scroll', onScroll)
+    el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [current])
 
@@ -1228,7 +1238,7 @@ export default function BookPortfolio() {
               </div>
             </div>
 
-            <div className="right-inner" id="right-scroll" ref={rightScrollRef} style={{opacity:sectionVisible?1:0,transition:'opacity .35s ease'}}>
+            <div className={`right-inner${sectionVisible ? '' : ' section-hidden'}`} id="right-scroll" ref={rightScrollRef}>
 
               {/* ===== HOME ===== */}
               <div className={`content-section${current==='home'?' active':''}`}>
@@ -1767,11 +1777,11 @@ export default function BookPortfolio() {
       )}
 
       {/* Bookmark — grows with scroll progress, shows chapter number */}
-      <div style={{
+      <div id="scroll-bookmark" style={{
         position:'fixed', top:0,
         right:'calc(50% - min(550px,48vw) + 10px)',
         width:'20px',
-        height:`${32+scrollPct*0.58}px`,
+        height:'32px',
         background:'linear-gradient(180deg,#8b1a1a 0%,#5a0f0f 100%)',
         zIndex:30, pointerEvents:'none',
         boxShadow:'1px 0 8px rgba(0,0,0,.4), inset -1px 0 0 rgba(255,150,100,.1)',
