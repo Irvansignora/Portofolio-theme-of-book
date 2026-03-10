@@ -164,7 +164,9 @@ export default function BookPortfolio() {
   const [konamiPhase, setKonamiPhase]     = useState(0)
   const [selectedProject, setSelectedProject] = useState(null)
   const [detailTransition, setDetailTransition] = useState('in') // 'in' | 'out-left' | 'out-right'
+  const [flipInDir, setFlipInDir] = useState('forward') // 'forward' | 'backward'
   const [secretTapCount, setSecretTapCount] = useState(0)        // mobile konami: tap logo 7x
+  const [isMobile, setIsMobile] = useState(false)
   const secretTapTimer = useRef(null)
 
   // ===== ALL REFS — declared before any useCallback to avoid SSR issues =====
@@ -332,14 +334,16 @@ export default function BookPortfolio() {
   // Animated project navigation — slide out then slide in
   const navigateProject = useCallback((nextIdx) => {
     if (nextIdx === selectedProject) return
-    const dir = nextIdx > selectedProject ? 'out-left' : 'out-right'
+    const goingForward = nextIdx > selectedProject
+    const dir = goingForward ? 'out-left' : 'out-right'
     setDetailTransition(dir)
     setTimeout(() => {
+      setFlipInDir(goingForward ? 'forward' : 'backward')
       setSelectedProject(nextIdx)
       setDetailTransition('in')
       if (rightScrollRef.current) rightScrollRef.current.scrollTop = 0
-    }, 250)
-  }, [selectedProject])
+    }, isMobile ? 260 : 410)
+  }, [selectedProject, isMobile])
 
   // Open project with reset scroll + transition
   const openProject = useCallback((idx) => {
@@ -365,8 +369,11 @@ export default function BookPortfolio() {
   }, [])
 
   useEffect(() => {
-    try {
-      const key = 'miy_visits'
+    const check = () => setIsMobile(window.innerWidth <= 700)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
       const v = parseInt(localStorage.getItem(key) || '0') + 1
       localStorage.setItem(key, v)
       setVisitCount(v)
@@ -375,8 +382,8 @@ export default function BookPortfolio() {
 
   // Opening book animation on load
   useEffect(() => {
-    const t1 = setTimeout(() => setIntroPhase('opening'), 300)
-    const t2 = setTimeout(() => setIntroPhase('done'), 1800)
+    const t1 = setTimeout(() => setIntroPhase('opening'), 500)
+    const t2 = setTimeout(() => setIntroPhase('done'), 2200)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
@@ -714,11 +721,16 @@ export default function BookPortfolio() {
       {introPhase !== 'done' && (
         <div className={`intro-curtain${introPhase === 'opening' ? ' opening' : ''}`}>
           <div className="intro-curtain-inner">
+            <div className="intro-welcome">— Welcome to my journey —</div>
             <div className="intro-monogram">MIY</div>
             <div className="intro-title">Muhamad Irpan Yasin</div>
             <div className="intro-subtitle">— Portfolio —</div>
+            <div className="intro-journey">
+              "A life's work, bound between these pages."
+            </div>
             <div className="intro-ornament">✦ · · · ✦ · · · ✦</div>
           </div>
+          <div className="intro-hint">opening the book…</div>
         </div>
       )}
 
@@ -869,7 +881,7 @@ export default function BookPortfolio() {
 
           {/* RIGHT PAGE */}
           <div id="page-right" style={{position:'relative'}}>
-            {isFlipping && <div className="flip-leaf" ref={leafRef} style={flipStyle} />}
+            {isFlipping && !isMobile && <div className="flip-leaf" ref={leafRef} style={flipStyle} />}
 
             {/* Chapter ribbon — decorative progress */}
             <div className="chapter-ribbon-wrap">
@@ -1037,10 +1049,14 @@ export default function BookPortfolio() {
                         key={selectedProject}
                         style={{
                           animation: detailTransition === 'in'
-                            ? 'projSlideIn .28s cubic-bezier(.16,1,.3,1) both'
+                            ? (isMobile
+                                ? 'projSlideIn 300ms cubic-bezier(.16,1,.3,1) both'
+                                : (flipInDir === 'forward'
+                                    ? 'projFlipIn 550ms cubic-bezier(.16,1,.3,1) both'
+                                    : 'projFlipInReverse 550ms cubic-bezier(.16,1,.3,1) both'))
                             : detailTransition === 'out-left'
-                            ? 'projSlideOutLeft .25s cubic-bezier(.4,0,1,1) both'
-                            : 'projSlideOutRight .25s cubic-bezier(.4,0,1,1) both',
+                            ? (isMobile ? 'projSlideOutLeft 250ms cubic-bezier(.4,0,1,1) both' : 'projFlipOut 400ms cubic-bezier(.4,0,1,1) both')
+                            : (isMobile ? 'projSlideOutRight 250ms cubic-bezier(.4,0,1,1) both' : 'projFlipOutReverse 400ms cubic-bezier(.4,0,1,1) both'),
                         }}
                       >
                         <div className="proj-detail-back">
@@ -1362,6 +1378,36 @@ export default function BookPortfolio() {
                 ))}
               </div>
             )}
+
+            {/* Quick actions — Get CV & LinkedIn inside mobile drawer */}
+            <div style={{marginTop:'auto',borderTop:'1px solid rgba(181,137,15,.15)',paddingTop:'.8rem',display:'flex',flexDirection:'column',gap:'.4rem',padding:'1rem 1rem 0'}}>
+              <a href="/cv.pdf" download="CV-Muhamad-Irpan-Yasin.pdf"
+                style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.5rem .8rem',border:'1px solid rgba(181,137,15,.3)',color:'rgba(181,137,15,.8)',fontFamily:'var(--display)',fontSize:'.4rem',letterSpacing:'.12em',textTransform:'uppercase',textDecoration:'none',background:'rgba(181,137,15,.05)'}}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:'13px',height:'13px',flexShrink:0}}>
+                  <path d="M4 1h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><path d="M9 1v4h3M8 7v5m-2-2 2 2 2-2"/>
+                </svg>
+                Download CV
+              </a>
+              <a href="https://www.linkedin.com/in/muhamad-irpan-yasin" target="_blank" rel="noopener"
+                style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.5rem .8rem',border:'1px solid rgba(181,137,15,.3)',color:'rgba(181,137,15,.8)',fontFamily:'var(--display)',fontSize:'.4rem',letterSpacing:'.12em',textTransform:'uppercase',textDecoration:'none',background:'rgba(181,137,15,.05)'}}>
+                <svg viewBox="0 0 16 16" fill="currentColor" style={{width:'13px',height:'13px',flexShrink:0}}>
+                  <path d="M13 1H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM5.5 12H4V6.5h1.5V12zM4.75 5.75a.875.875 0 1 1 0-1.75.875.875 0 0 1 0 1.75zM12 12h-1.5V9.2c0-.7-.56-1.2-1.25-1.2S8 8.5 8 9.2V12H6.5V6.5H8v.72A2.24 2.24 0 0 1 9.75 6.5C11.02 6.5 12 7.48 12 8.75V12z"/>
+                </svg>
+                LinkedIn
+              </a>
+              <div style={{display:'flex',gap:'.4rem',marginTop:'.2rem'}}>
+                <button
+                  onClick={() => { setSoundOn(s=>!s) }}
+                  style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'.4rem',padding:'.4rem',border:'1px solid rgba(181,137,15,.2)',color:'rgba(181,137,15,.6)',fontFamily:'var(--display)',fontSize:'.38rem',letterSpacing:'.1em',background:'rgba(181,137,15,.04)',cursor:'pointer',textTransform:'uppercase'}}>
+                  {soundOn ? '🔊 Sound' : '🔇 Sound'}
+                </button>
+                <button
+                  onClick={() => { const goingDark = !darkMode; setDarkTransition(goingDark ? 'todark' : 'tolight'); setTimeout(() => { setDarkMode(goingDark); setDarkTransition(null) }, 420) }}
+                  style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'.4rem',padding:'.4rem',border:'1px solid rgba(181,137,15,.2)',color:'rgba(181,137,15,.6)',fontFamily:'var(--display)',fontSize:'.38rem',letterSpacing:'.1em',background:'rgba(181,137,15,.04)',cursor:'pointer',textTransform:'uppercase'}}>
+                  {darkMode ? '☀️ Light' : '🌙 Dark'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
