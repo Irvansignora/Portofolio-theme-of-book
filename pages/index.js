@@ -187,7 +187,7 @@ export default function BookPortfolio() {
   const konamiAnimRef      = useRef(null)
   const dustPuffRef        = useRef([])
   const dustAnimRef        = useRef(null)
-  const introPhaseRef      = useRef('closed') // mirrors introPhase state for use in closures
+  const introPhaseRef      = useRef('closed') // mirrors introPhase, safe in closures
 
   const spawnDustPuff = useCallback(() => {
     const canvas = canvasRef.current
@@ -444,7 +444,7 @@ export default function BookPortfolio() {
       introPhaseRef.current = 'done'
       setIntroPhase('done')
     }, 900)
-  }, []) // no deps needed — reads from ref, not stale state
+  }, [])
 
   useEffect(() => {
     // Show intro content after short delay
@@ -559,7 +559,11 @@ export default function BookPortfolio() {
     setTimeout(() => {
       setCurrent(id)
       setPageNums({ l: CHAPTERS[id].pageL, r: CHAPTERS[id].pageR })
-      if (rightScrollRef.current) rightScrollRef.current.scrollTop = 0
+      if (rightScrollRef.current) {
+        rightScrollRef.current.style.scrollBehavior = 'auto'
+        rightScrollRef.current.scrollTop = 0
+        requestAnimationFrame(() => { if (rightScrollRef.current) rightScrollRef.current.style.scrollBehavior = '' })
+      }
       if (id === 'home') trigCounters()
     }, 620)
     setTimeout(() => { setIsFlipping(false); flipping.current = false }, 1300)
