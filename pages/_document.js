@@ -1,7 +1,7 @@
 import { Html, Head, Main, NextScript } from 'next/document'
 
-// ⚠️  Ganti BASE_URL dengan domain lo saat deploy (contoh: https://irpanyasin.vercel.app)
-const BASE_URL = 'https://irpanyasin.vercel.app'
+
+const BASE_URL = 'https://irvansignora.vercel.app/'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -9,8 +9,8 @@ const jsonLd = {
   name: 'Muhamad Irpan Yasin',
   url: BASE_URL,
   image: `${BASE_URL}/irvan.jpg`,
-  jobTitle: 'Sales & Finance Professional',
-  description: '15+ years expertise in Sales Management, Finance, Data Analysis & Tax. Based in Bandung, West Java, Indonesia.',
+  jobTitle: 'Supervisor & administration Officer',
+  description: '15+ years expertise in Sales Management, Administration, Data Analysis & Tax. Based in Bandung, West Java, Indonesia.',
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Bandung',
@@ -20,7 +20,7 @@ const jsonLd = {
   sameAs: [
     'https://www.linkedin.com/in/muhamad-irpan-yasin',
   ],
-  knowsAbout: ['Sales Management','Tax Management','Data Analysis','Finance','Business Development'],
+  knowsAbout: ['Sales Management','Tax Management','Data Analysis','Administration','Business Development'],
 }
 
 export default function Document() {
@@ -28,8 +28,8 @@ export default function Document() {
     <Html lang="en">
       <Head>
         {/* ===== PRIMARY META ===== */}
-        <meta name="description" content="Muhamad Irpan Yasin — 15+ years expertise in Sales Management, Finance, Data Analysis & Tax. Open for full-time, freelance & consulting roles. Bandung, West Java, Indonesia." />
-        <meta name="keywords" content="Muhamad Irpan Yasin, portfolio, sales manager, finance, tax management, data analysis, Bandung, Indonesia" />
+        <meta name="description" content="Muhamad Irpan Yasin — 15+ years expertise in Sales Management, Administration, Data Analysis & Tax. Open for full-time, freelance & consulting roles. Bandung, West Java, Indonesia." />
+        <meta name="keywords" content="Muhamad Irpan Yasin, portfolio, sales manager, Administration, tax management, data analysis, Bandung, Indonesia" />
         <meta name="author" content="Muhamad Irpan Yasin" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={BASE_URL} />
@@ -39,8 +39,8 @@ export default function Document() {
         <meta property="og:url"         content={BASE_URL} />
         <meta property="og:locale"      content="en_US" />
         <meta property="og:site_name"   content="Muhamad Irpan Yasin — Portfolio" />
-        <meta property="og:title"       content="Muhamad Irpan Yasin — Sales · Finance · Data Analysis" />
-        <meta property="og:description" content="15+ years expertise in Sales, Finance, Data Analysis & Tax Management. Open for full-time, freelance & consulting roles." />
+        <meta property="og:title"       content="Muhamad Irpan Yasin — Sales · Administration · Data Analysis" />
+        <meta property="og:description" content="15+ years expertise in Sales, Administration, Data Analysis & Tax Management. Open for full-time, freelance & consulting roles." />
         <meta property="og:image"       content={`${BASE_URL}/og-banner.jpg`} />
         <meta property="og:image:secure_url" content={`${BASE_URL}/og-banner.jpg`} />
         <meta property="og:image:width"  content="1200" />
@@ -49,8 +49,8 @@ export default function Document() {
 
         {/* ===== TWITTER / X CARD ===== */}
         <meta name="twitter:card"        content="summary_large_image" />
-        <meta name="twitter:title"       content="Muhamad Irpan Yasin — Sales · Finance · Data Analysis" />
-        <meta name="twitter:description" content="15+ years expertise in Sales, Finance, Data Analysis & Tax Management." />
+        <meta name="twitter:title"       content="Muhamad Irpan Yasin — Sales · Administration · Data Analysis" />
+        <meta name="twitter:description" content="15+ years expertise in Sales, Administration, Data Analysis & Tax Management." />
         <meta name="twitter:image"       content={`${BASE_URL}/og-banner.jpg`} />
 
         {/* ===== FAVICON & THEME ===== */}
